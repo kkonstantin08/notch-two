@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BNCustomBuild</key>
+	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Show Bluetooth audio connections and available headphone battery levels when enabled.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Show calendar events and enabled event alerts in the notch.</string>
+	<key>CFBundleAllowMixedLocalizations</key>
+	<true/>
+	<key>SUBundleName</key>
+	<string>Notch Two</string>
+	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>Notch Two analyzes audio from your music app to draw a real-time waveform in the notch. Audio is processed locally and never leaves your Mac.</string>
+	<key>BNUpdateChannel</key>
+	<string>stable</string>
+	<key>SUEnableDownloaderService</key>
+	<true/>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict/>
+	</array>
+</dict>
+</plist>

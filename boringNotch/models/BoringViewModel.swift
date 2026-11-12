@@ -1,0 +1,242 @@
+//
+//  BoringViewModel.swift
+//  boringNotch
+//
+//  Created by Harsh Vardhan  Goswami  on 04/08/24.
+//
+
+import Combine
+import Defaults
+import SwiftUI
+
+final class BoringViewModel: NSObject, ObservableObject {
+    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var detector = FullscreenMediaDetector.shared
+
+    let animationLibrary: BoringAnimations = .init()
+    let dropInteraction = DropInteractionState()
+
+    private(set) var notificationAutoOpened = false
+
+    @Published private(set) var notchState: NotchState = .closed
+
+    var cancellables: Set<AnyCancellable> = []
+
+    @Published var hideOnClosed: Bool = true
+
+    @Published var edgeAutoOpenActive: Bool = false
+    @Published var isHoveringCalendar: Bool = false
+    /// Keeps the open notch alive while a popover is showing.
+    @Published var isPopoverActive: Bool = false
+    @Published var isHoveringPomodoroControls = false
+    var isHoveringNotificationScroll = false
+    @Published var isComposingNotificationReply = false
+
+    var popoverKeepsNotchOpen: Bool { isPopoverActive || isHoveringPomodoroControls || isComposingNotificationReply }
+
+    @Published var screenUUID: String?
+
+    @Published var notchSize: CGSize = getClosedNotchSize()
+    @Published var closedNotchSize: CGSize = getClosedNotchSize()
+
+    let camera: CameraModel
+
+    deinit {
+        destroy()
+    }
+
+    func destroy() {
+        cancellables.forEach { $0.cancel() }
+        cancellables.removeAll()
+    }
+
+    init(screenUUID: String? = nil, camera: CameraModel) {
+        self.camera = camera
+        self.screenUUID = screenUUID
+
+        super.init()
+
+        notchSize = getClosedNotchSize(screenUUID: screenUUID)
+        closedNotchSize = notchSize
+
+        setupDetectorObserver()
+    }
+
+    private func setupDetectorObserver() {
+        // Publisher for the user’s fullscreen detection setting
+        let enabledPublisher = Defaults
+            .publisher(.hideNotchOption)
+            .map(\.newValue)
+            .map { $0 != .never }
+            .removeDuplicates()
+
+        // Publisher for the current screen UUID (non-nil, distinct)
+        let screenPublisher = $screenUUID
+            .compactMap { $0 }
+            .removeDuplicates()
+
+        // Publisher for fullscreen status dictionary
+        let fullscreenStatusPublisher = detector.$fullscreenStatus
+            .removeDuplicates()
+
+        // Combine all three: screen UUID, fullscreen status, and enabled setting
+        Publishers.CombineLatest3(screenPublisher, fullscreenStatusPublisher, enabledPublisher)
+            .map { screenUUID, fullscreenStatus, enabled in
+                let isFullscreen = fullscreenStatus[screenUUID] ?? false
+                return enabled && isFullscreen
+            }
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] shouldHide in
+                withAnimation(.smooth) {
+                    self?.hideOnClosed = shouldHide
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    // Computed property for effective notch height
+    var effectiveClosedNotchHeight: CGFloat {
+        let currentScreen = screenUUID.flatMap { NSScreen.screen(withUUID: $0) }
+        let noNotchAndFullscreen = hideOnClosed && (currentScreen?.safeAreaInsets.top ?? 0 <= 0 || currentScreen == nil)
+        return noNotchAndFullscreen ? 0 : closedNotchSize.height
+    }
+
+    /// Whether the current screen has a notch (safe area top inset > 0)
+    var hasNotch: Bool {
+        let currentScreen = screenUUID.flatMap { NSScreen.screen(withUUID: $0) } ?? NSScreen.main
+        return (currentScreen?.safeAreaInsets.top ?? 0) > 0
+    }
+
+    var chinHeight: CGFloat {
+        if !Defaults[.hideTitleBar] {
+            return 0
+        }
+
+        guard let currentScreen = screenUUID.flatMap({ NSScreen.screen(withUUID: $0) }) else {
+            return 0
+        }
+
+        if notchState == .open { return 0 }
+
+        let menuBarHeight = currentScreen.frame.maxY - currentScreen.visibleFrame.maxY
+        let currentHeight = effectiveClosedNotchHeight
+
+        if currentHeight == 0 { return 0 }
+
+        return max(0, menuBarHeight - currentHeight)
+    }
+
+    func toggleCameraPreview() {
+        switch camera.state {
+        case .running, .interrupted:
+            camera.stopSession()
+        case .stopped, .unavailable, .failed:
+            if camera.cameraAvailable {
+                camera.startSession()
+            }
+
+        case .permissionDenied:
+            DispatchQueue.main.async {
+                NSApp.setActivationPolicy(.regular)
+                NSApp.activate(ignoringOtherApps: true)
+
+                let alert = NSAlert()
+                alert.messageText = NSLocalizedString("Camera Access Required", comment: "Camera permission alert title")
+                alert.informativeText = NSLocalizedString("Please allow camera access in System Settings.", comment: "Camera permission alert message")
+                alert.addButton(withTitle: NSLocalizedString("Open Settings", comment: "Button title that opens app or system settings"))
+                alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Cancel button title"))
+
+                if alert.runModal() == .alertFirstButtonReturn {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+
+                NSApp.setActivationPolicy(.accessory)
+                NSApp.deactivate()
+            }
+
+        case .permissionRequired:
+            camera.requestAccess()
+
+        case .requestingPermission, .starting:
+            break
+        }
+    }
+
+    func isMouseHovering(position: NSPoint = NSEvent.mouseLocation) -> Bool {
+        let screenFrame = getScreenFrame(screenUUID)
+        if let frame = screenFrame {
+            let baseY = frame.maxY - notchSize.height
+            let baseX = frame.midX - notchSize.width / 2
+
+            return position.y >= baseY && position.x >= baseX && position.x <= baseX + notchSize.width
+        }
+
+        return false
+    }
+
+    @discardableResult
+    func open(forNotification: Bool = false) -> Bool {
+        if !forNotification { notificationAutoOpened = false }
+        guard !coordinator.firstLaunch, notchState != .open else { return false }
+
+        notificationAutoOpened = forNotification
+        self.notchSize = openNotchSize
+        self.notchState = .open
+
+        // Force music information update when notch is opened
+        MusicManager.shared.forceUpdate()
+
+        return true
+    }
+
+    func closeNotificationPresentation() {
+        guard notificationAutoOpened, !popoverKeepsNotchOpen else { return }
+        close()
+    }
+
+    func openShelfForDrag() {
+        guard Defaults[.boringShelf], notchState == .open || open() else { return }
+        coordinator.currentView = .shelf
+    }
+
+    func close() {
+        // Do not close while a share picker or sharing service is active
+        if SharingStateManager.shared.preventNotchClose {
+            return
+        }
+        // The camera is on-demand: the notch closing always ends capture.
+        // Intent clears too, so no recovery path can reopen it while closed.
+        notificationAutoOpened = false
+        camera.stopSession()
+        self.notchSize = getClosedNotchSize(screenUUID: self.screenUUID)
+        self.closedNotchSize = self.notchSize
+        self.notchState = .closed
+        self.isPopoverActive = false
+        self.isHoveringPomodoroControls = false
+        self.isHoveringNotificationScroll = false
+        if self.coordinator.shouldShowSneakPeek(on: self.screenUUID) {
+            self.coordinator.toggleSneakPeek(status: false, type: .music, targetScreenUUID: self.screenUUID)
+        }
+        self.edgeAutoOpenActive = false
+
+        // Set the current view to shelf if it contains files and the user enables openShelfByDefault
+        // Otherwise, if the user has not enabled openLastShelfByDefault, set the view to home
+        if Defaults[.boringShelf] && !ShelfStateViewModel.shared.isEmpty && Defaults[.openShelfByDefault] {
+            coordinator.currentView = .shelf
+        } else if !coordinator.openLastTabByDefault {
+            coordinator.currentView = .home
+        }
+    }
+
+    func closeHello() {
+        Task { @MainActor in
+            withAnimation(animationLibrary.animation) {
+                coordinator.helloAnimationRunning = false
+                close()
+            }
+        }
+    }
+}

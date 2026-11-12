@@ -1,0 +1,62 @@
+import Foundation
+
+@main
+struct NotificationLifecycleChecks {
+    struct Notice: Identifiable, Equatable { let id: String; var body: String = "" }
+    static func main() {
+        var state = NotificationPresentation<Notice>()
+        let now = Date(timeIntervalSince1970: 1_000)
+        state.receive(Notice(id: "a"), at: now)
+        state.setHovered(true, at: now.addingTimeInterval(2))
+        assert(state.deadline == nil)
+        state.receive(Notice(id: "b"), at: now.addingTimeInterval(3))
+        assert(state.active?.id == "a" && state.queued.map(\.id) == ["b"])
+        state.setHovered(false, at: now.addingTimeInterval(10))
+        assert(state.deadline == now.addingTimeInterval(16))
+        assert(!state.expire(token: "a", at: now.addingTimeInterval(15)))
+        assert(state.expire(token: "a", at: now.addingTimeInterval(16)))
+        assert(state.active?.id == "b" && state.deadline == now.addingTimeInterval(24))
+        assert(!state.expire(token: "a", at: now.addingTimeInterval(30)))
+        state.setDuration(0, at: now)
+        assert(state.deadline == nil)
+        for i in 0..<100 { state.receive(Notice(id: String(i)), at: now) }
+        assert(state.queued.count == 5)
+        state.dismiss(token: "b", at: now)
+        assert(state.active != nil && state.deadline == nil)
+        state.setDuration(3, at: now)
+        assert(state.deadline == now.addingTimeInterval(3))
+        for _ in 0..<20 {
+            state.clear()
+            assert(state.active == nil && state.queued.isEmpty && state.deadline == nil)
+            state.receive(Notice(id: "next"), at: now)
+            state.receive(Notice(id: "next"), at: now)
+            assert(state.queued.isEmpty)
+        }
+        state.clear()
+        state.setDuration(8, at: now)
+        state.receive(Notice(id: "reused", body: "first"), at: now)
+        state.receive(Notice(id: "reused", body: "replacement"), at: now.addingTimeInterval(3))
+        assert(state.active?.body == "replacement" && state.queued.isEmpty)
+        assert(state.deadline == now.addingTimeInterval(11))
+        state.setHovered(true, at: now.addingTimeInterval(4))
+        state.setComposing(true, at: now.addingTimeInterval(5))
+        state.setHovered(false, at: now.addingTimeInterval(6))
+        assert(state.deadline == nil)
+        state.setComposing(false, at: now.addingTimeInterval(16))
+        assert(state.deadline == now.addingTimeInterval(23))
+        state.setComposing(true, at: now.addingTimeInterval(17))
+        state.receive(Notice(id: "reused", body: "new target"), at: now.addingTimeInterval(18))
+        assert(state.isComposing && state.deadline == nil)
+        assert(state.active?.body == "replacement" && state.queued.map(\.body) == ["new target"])
+        state.setComposing(false, at: now.addingTimeInterval(19))
+        state.showNext(at: now.addingTimeInterval(20))
+        assert(state.active?.body == "new target" && state.queued.isEmpty)
+        var retries = NotificationRetryBudget()
+        assert((0..<7).map { _ in retries.nextDelay(at: now) } == [1, 2, 4, 8, 16, 32, nil])
+        retries.connected(at: now)
+        assert(retries.nextDelay(at: now.addingTimeInterval(1)) == nil)
+        retries.connected(at: now)
+        assert(retries.nextDelay(at: now.addingTimeInterval(31)) == 1)
+        print("PASS: notification FIFO, hover, token deadlines, indefinite display, 20 resets and finite recovery")
+    }
+}

@@ -1,0 +1,860 @@
+//
+//  BoringCalendar.swift
+//  boringNotch
+//
+//  Created by Harsh Vardhan  Goswami  on 08/09/24.
+//
+
+import Defaults
+import SwiftUI
+
+struct Config: Equatable {
+    //    var count: Int = 10  // 3 days past + today + 7 days future
+    var past: Int = 7
+    var future: Int = 14
+    var steps: Int = 1  // Each step is one day
+    var spacing: CGFloat = 0
+    var showsText: Bool = true
+    var offset: Int = 2  // Number of dates to the left of the selected date
+}
+
+/// The default scrolling day "dial": a horizontal strip of days centered on the selection.
+struct WheelPicker: View {
+    @EnvironmentObject var vm: BoringViewModel
+    @Binding var selectedDate: Date
+    @State private var scrollPosition: Int?
+    @State private var haptics: Bool = false
+    @State private var byClick: Bool = false
+    @State private var scrollAccumulator: CGFloat = 0
+    @State private var isHovering: Bool = false
+    @State private var scrollMonitor: Any?
+    let config: Config
+    var anchorDate = Date()
+
+    private let scrollThreshold: CGFloat = 2.0
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: config.spacing) {
+                let spacerNum = config.offset
+                let dateCount = totalDateItems()
+                let totalItems = dateCount + 2 * spacerNum
+                ForEach(0..<totalItems, id: \.self) { index in
+                    if index < spacerNum || index >= spacerNum + dateCount {
+                        // Leading/trailing spacers sized to match a date cell
+                        Spacer()
+                            .frame(width: 24, height: 24)
+                            .id(index)
+                    } else {
+                        let date = dateForItemIndex(index: index, spacerNum: spacerNum)
+                        let isSelected = Calendar.current.isDate(date, inSameDayAs: selectedDate)
+                        dateButton(date: date, isSelected: isSelected, id: index) {
+                            selectedDate = date
+                            byClick = true
+                            withAnimation {
+                                scrollPosition = index
+                            }
+                            if Defaults[.enableHaptics] {
+                                haptics.toggle()
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(height: 50)
+            .scrollTargetLayout()
+        }
+        .scrollIndicators(.never)
+        .scrollPosition(id: $scrollPosition, anchor: .center)
+        .scrollTargetBehavior(.viewAligned)  // Ensures scroll view snaps the centered view
+        .safeAreaPadding(.horizontal)
+        .sensoryFeedback(.alignment, trigger: haptics)
+        .onContinuousHover { phase in
+            switch phase {
+            case .active:
+                isHovering = true
+            case .ended:
+                isHovering = false
+            }
+        }
+        .onAppear {
+            centerOnSelectedDate()
+
+            // Register a local scroll-wheel monitor, tracking the token so we can tear it down.
+            if scrollMonitor == nil {
+                scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
+                    guard isHovering else { return event }
+
+                    if abs(event.deltaY) > abs(event.deltaX) && abs(event.deltaY) > 0.1 {
+                        navigateDateByScrollWheel(deltaY: event.deltaY)
+                    }
+                    return event
+                }
+            }
+        }
+        .onDisappear {
+            if let monitor = scrollMonitor {
+                NSEvent.removeMonitor(monitor)
+                scrollMonitor = nil
+            }
+        }
+        .onChange(of: scrollPosition) { _, newValue in
+            if !byClick {
+                handleScrollChange(newValue: newValue, config: config)
+            } else {
+                byClick = false
+            }
+        }
+        // When parent updates the bound selectedDate (e.g., view reopen), center the wheel on it
+        .onChange(of: selectedDate) { _, newValue in
+            let targetIndex = indexForDate(newValue)
+            if scrollPosition != targetIndex {
+                byClick = true
+                withAnimation {
+                    scrollPosition = targetIndex
+                }
+            }
+        }
+    }
+
+    /// Navigate date based on vertical scroll wheel input
+    private func navigateDateByScrollWheel(deltaY: CGFloat) {
+        scrollAccumulator += deltaY
+
+        // Use threshold to prevent overly sensitive scrolling
+        if abs(scrollAccumulator) >= scrollThreshold {
+            let direction = scrollAccumulator > 0 ? -1 : 1  // Scroll up = go back, scroll down = go forward
+            scrollAccumulator = 0
+
+            guard let currentIndex = scrollPosition else { return }
+            let spacerNum = config.offset
+            let dateCount = totalDateItems()
+            let newIndex = max(spacerNum, min(currentIndex + direction, spacerNum + dateCount - 1))
+
+            if newIndex != currentIndex {
+                byClick = true
+                withAnimation {
+                    scrollPosition = newIndex
+                }
+                let newDate = dateForItemIndex(index: newIndex, spacerNum: spacerNum)
+                selectedDate = newDate
+                if Defaults[.enableHaptics] {
+                    haptics.toggle()
+                }
+            }
+        }
+    }
+
+    private func dateButton(
+        date: Date, isSelected: Bool, id: Int, onClick: @escaping () -> Void
+    ) -> some View {
+        let isToday = Calendar.current.isDateInToday(date)
+        return Button(action: onClick) {
+            VStack(spacing: 8) {
+                dayText(date: dateToString(for: date), isToday: isToday, isSelected: isSelected)
+                dateCircle(date: date, isToday: isToday, isSelected: isSelected)
+            }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 4)
+            .background(isSelected ? Color.effectiveAccentBackground : Color.clear)
+            .contentShape(.rect)
+            .cornerRadius(8)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .id(id)
+    }
+
+    private func dayText(date: String, isToday: Bool, isSelected: Bool) -> some View {
+        Text(date)
+            .font(.caption)
+            .foregroundColor(isSelected ? .white : Color(white: 0.65))
+    }
+
+    private func dateCircle(date: Date, isToday: Bool, isSelected: Bool) -> some View {
+        ZStack {
+            Circle()
+                .fill(isToday ? Color.effectiveAccent : .clear)
+                .frame(width: 20, height: 20)
+                .overlay(
+                    Circle()
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 0)
+                )
+            Text("\(date.date)")
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(isSelected ? .white : Color(white: isToday ? 0.9 : 0.65))
+        }
+    }
+
+    func handleScrollChange(newValue: Int?, config: Config) {
+        guard let newIndex = newValue else { return }
+        let spacerNum = config.offset
+        let dateCount = totalDateItems()
+        guard (spacerNum..<(spacerNum + dateCount)).contains(newIndex) else { return }
+        let date = dateForItemIndex(index: newIndex, spacerNum: spacerNum)
+        if !Calendar.current.isDate(date, inSameDayAs: selectedDate) {
+            selectedDate = date
+            if Defaults[.enableHaptics] {
+                haptics.toggle()
+            }
+        }
+    }
+
+    private func centerOnSelectedDate() {
+        byClick = true
+        scrollPosition = indexForDate(selectedDate)
+    }
+
+    // MARK: - Index/Date mapping with steps and spacers
+    private func indexForDate(_ date: Date) -> Int {
+        let spacerNum = config.offset
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: anchorDate)
+        let startDate = cal.startOfDay(for: cal.date(byAdding: .day, value: -config.past, to: today) ?? today)
+        let target = cal.startOfDay(for: date)
+        let days = cal.dateComponents([.day], from: startDate, to: target).day ?? 0
+        let stepIndex = max(0, min(days / max(config.steps, 1), totalDateItems() - 1))
+        return spacerNum + stepIndex
+    }
+
+    private func dateForItemIndex(index: Int, spacerNum: Int) -> Date {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: anchorDate)
+        let startDate = cal.date(byAdding: .day, value: -config.past, to: today) ?? today
+        let stepIndex = index - spacerNum
+        return cal.date(byAdding: .day, value: stepIndex * max(config.steps, 1), to: startDate) ?? today
+    }
+
+    private func totalDateItems() -> Int {
+        let range = config.past + config.future
+        let step = max(config.steps, 1)
+        return Int(ceil(Double(range) / Double(step))) + 1
+    }
+
+    private func dateToString(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "E"
+        return formatter.string(from: date)
+    }
+}
+
+/// Optional week-aligned strip: shows one week at a time, starting on the user's chosen
+/// first weekday. The wheel and the ‹ › chevrons page a whole week.
+struct WeekStripPicker: View {
+    @Binding var selectedDate: Date
+    @Default(.weekStartDay) private var weekStartDay
+    @State private var displayedWeekStart: Date = Date()
+    @State private var slideForward: Bool = true
+    @State private var haptics: Bool = false
+    @State private var scrollAccumulator: CGFloat = 0
+    @State private var isHovering: Bool = false
+    @State private var scrollMonitor: Any?
+    @Namespace private var selectionNamespace
+
+    private let scrollThreshold: CGFloat = 2.0
+
+    /// Calendar honoring the user's chosen first weekday.
+    private var calendar: Calendar {
+        var calendar = Calendar.current
+        calendar.firstWeekday = weekStartDay.firstWeekday
+        return calendar
+    }
+
+    /// The seven days of the currently displayed week. Decoupled from `selectedDate` so the
+    /// highlight can walk across a fixed week before the week itself shifts.
+    private var weekDays: [Date] {
+        (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: displayedWeekStart) }
+    }
+
+    var body: some View {
+        HStack(spacing: 2) {
+            chevron(systemName: "chevron.left", direction: -1)
+            weekRow
+                .frame(maxWidth: .infinity)
+                .clipped()
+            chevron(systemName: "chevron.right", direction: 1)
+        }
+        .frame(height: 50)
+        .clipped()  // keep the week-flip slide inside the calendar column (no bleed into music)
+        .padding(.horizontal, 2)
+        .sensoryFeedback(.alignment, trigger: haptics)
+        .onContinuousHover { phase in
+            switch phase {
+            case .active:
+                isHovering = true
+            case .ended:
+                isHovering = false
+            }
+        }
+        .onAppear {
+            displayedWeekStart = startOfWeek(for: selectedDate)
+            // Local monitor so the scroll wheel steps the selection while hovering the calendar.
+            if scrollMonitor == nil {
+                scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
+                    guard isHovering else { return event }
+                    if abs(event.deltaY) > abs(event.deltaX) && abs(event.deltaY) > 0.1 {
+                        navigateByScrollWheel(deltaY: event.deltaY)
+                    }
+                    return event
+                }
+            }
+        }
+        .onDisappear {
+            if let monitor = scrollMonitor {
+                NSEvent.removeMonitor(monitor)
+                scrollMonitor = nil
+            }
+        }
+        .onChange(of: selectedDate) { _, newValue in
+            // Re-anchor the visible week only when the selection lands outside it (e.g. the notch
+            // reopening resets the date to today). Snap with no slide so it isn't jarring.
+            let windowEnd = calendar.date(byAdding: .day, value: 7, to: displayedWeekStart) ?? displayedWeekStart
+            let selDay = calendar.startOfDay(for: newValue)
+            if selDay < displayedWeekStart || selDay >= windowEnd {
+                withTransaction(Transaction(animation: nil)) {
+                    displayedWeekStart = startOfWeek(for: newValue)
+                }
+            }
+        }
+        .onChange(of: weekStartDay) { _, _ in
+            withTransaction(Transaction(animation: nil)) {
+                displayedWeekStart = startOfWeek(for: selectedDate)
+            }
+        }
+    }
+
+    /// The seven-day row. Re-keyed by the displayed week so a week change slides in
+    /// directionally; within a week the selection pill glides between days.
+    private var weekRow: some View {
+        HStack(spacing: 0) {
+            ForEach(weekDays, id: \.self) { date in
+                dateButton(date: date)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .id(displayedWeekStart)
+        .transition(.push(from: slideForward ? .trailing : .leading))
+    }
+
+    // MARK: - Navigation
+
+    /// Step the selection one day per accumulated scroll threshold.
+    private func navigateByScrollWheel(deltaY: CGFloat) {
+        scrollAccumulator += deltaY
+
+        // Use a threshold to avoid overly sensitive scrolling.
+        if abs(scrollAccumulator) >= scrollThreshold {
+            let direction = scrollAccumulator > 0 ? -1 : 1  // Scroll up = back, scroll down = forward
+            scrollAccumulator = 0
+            stepSelection(by: direction)
+        }
+    }
+
+    /// Move the selection by one day; if it leaves the visible week, slide the week to follow.
+    /// Uses the same `withAnimation { }` the day dial uses — no bespoke animation.
+    private func stepSelection(by direction: Int) {
+        guard let newDate = calendar.date(byAdding: .day, value: direction, to: selectedDate) else { return }
+        let windowEnd = calendar.date(byAdding: .day, value: 7, to: displayedWeekStart) ?? displayedWeekStart
+        let selDay = calendar.startOfDay(for: newDate)
+        let crossesForward = selDay >= windowEnd
+        let crossesBackward = selDay < displayedWeekStart
+
+        withAnimation {
+            if crossesForward || crossesBackward {
+                slideForward = crossesForward
+                displayedWeekStart = calendar.date(
+                    byAdding: .day, value: crossesForward ? 7 : -7, to: displayedWeekStart
+                ) ?? displayedWeekStart
+            }
+            selectedDate = newDate
+        }
+        if Defaults[.enableHaptics] {
+            haptics.toggle()
+        }
+    }
+
+    /// Chevrons page the visible week and carry the selection along (same weekday column).
+    private func pageWeek(by direction: Int) {
+        slideForward = direction > 0
+        let newStart = calendar.date(byAdding: .day, value: direction * 7, to: displayedWeekStart) ?? displayedWeekStart
+        let newSelection = calendar.date(byAdding: .day, value: direction * 7, to: selectedDate) ?? selectedDate
+        withAnimation {
+            displayedWeekStart = newStart
+            selectedDate = newSelection
+        }
+        if Defaults[.enableHaptics] {
+            haptics.toggle()
+        }
+    }
+
+    private func selectDate(_ date: Date) {
+        withAnimation {
+            selectedDate = date
+        }
+        if Defaults[.enableHaptics] {
+            haptics.toggle()
+        }
+    }
+
+    private func startOfWeek(for date: Date) -> Date {
+        calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? calendar.startOfDay(for: date)
+    }
+
+    // MARK: - Cells
+
+    private func chevron(systemName: String, direction: Int) -> some View {
+        Button {
+            pageWeek(by: direction)
+        } label: {
+            Image(systemName: systemName)
+                .font(.caption.weight(.semibold))
+                .foregroundColor(Color(white: 0.65))
+                .frame(width: 14, height: 32)
+                .contentShape(.rect)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private func dateButton(date: Date) -> some View {
+        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+        let isToday = calendar.isDateInToday(date)
+        return Button {
+            selectDate(date)
+        } label: {
+            VStack(spacing: 6) {
+                Text(dayText(for: date))
+                    .font(.caption)
+                    .foregroundColor(isSelected ? .white : Color(white: 0.65))
+                dateCircle(date: date, isToday: isToday, isSelected: isSelected)
+            }
+            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity)
+            .background {
+                // Single highlight that glides between days within a week (matchedGeometry).
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.effectiveAccentBackground)
+                        .matchedGeometryEffect(id: "weekSelection-\(displayedWeekStart)", in: selectionNamespace)
+                }
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private func dateCircle(date: Date, isToday: Bool, isSelected: Bool) -> some View {
+        ZStack {
+            Circle()
+                .fill(isToday ? Color.effectiveAccent : .clear)
+                .frame(width: 20, height: 20)
+            Text("\(date.date)")
+                .font(.body)
+                .fontWeight(.medium)
+                .foregroundColor(isSelected ? .white : Color(white: isToday ? 0.9 : 0.65))
+        }
+    }
+
+    /// Localized very-short weekday symbol for a date (e.g. "M", "T").
+    private func dayText(for date: Date) -> String {
+        let symbols = calendar.veryShortWeekdaySymbols  // localized, always Sunday-first
+        guard !symbols.isEmpty else { return "" }
+        let index = calendar.component(.weekday, from: date) - 1  // 0…6, Sunday-based
+        return symbols[(index % symbols.count + symbols.count) % symbols.count]
+    }
+}
+
+struct CalendarView: View {
+    @EnvironmentObject var vm: BoringViewModel
+    @ObservedObject private var calendarManager = CalendarManager.shared
+    @State private var selectedDate = Date()
+    @Default(.calendarWeekView) private var calendarWeekView
+    @Default(.customFeatures) private var customFeatures
+    @State private var monthPicker = false
+    @State private var dialAnchor = Date()
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if calendarWeekView {
+                weekHeader
+            } else {
+                dialHeader
+            }
+
+            let filteredEvents = EventListView.filteredEvents(
+                events: calendarManager.events
+            )
+            if filteredEvents.isEmpty {
+                EmptyEventsView(selectedDate: selectedDate)
+                    .frame(maxHeight: .infinity, alignment: .center)
+            } else {
+                EventListView(events: calendarManager.events)
+            }
+        }
+        .task(id: Calendar.current.startOfDay(for: selectedDate)) {
+            await calendarManager.updateCurrentDate(selectedDate)
+        }
+        .onChange(of: vm.notchState) { _, _ in
+            selectedDate = Date()
+            dialAnchor = selectedDate
+        }
+        .onChange(of: monthPicker) { _, active in vm.isPopoverActive = active }
+        .onChange(of: customFeatures) {
+            if !customFeatures.contains(CustomFeature.calendar.rawValue) {
+                monthPicker = false
+                calendarManager.discardMonthCache()
+            }
+        }
+        .onAppear { calendarManager.startObservingStore() }
+        .onDisappear {
+            if monthPicker { vm.isPopoverActive = false }
+            calendarManager.stopObservingStore()
+        }
+    }
+
+    @ViewBuilder
+    private func monthLabel<Label: View>(@ViewBuilder label: () -> Label) -> some View {
+        if customFeatures.contains(CustomFeature.calendar.rawValue) {
+            Button { monthPicker.toggle() } label: { label() }
+                .buttonStyle(.plain)
+                .help("Choose a month, year, or day")
+                .popover(isPresented: $monthPicker) {
+                    CustomMonthPicker(selection: $selectedDate) { date in
+                        dialAnchor = date
+                        selectedDate = date
+                    }
+                }
+        } else {
+            label()
+        }
+    }
+
+    /// Week-aligned layout: a month/year header above a fixed, full-width week strip.
+    private var weekHeader: some View {
+        VStack(spacing: 4) {
+            HStack {
+                monthLabel {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(selectedDate.formatted(.dateTime.month(.abbreviated)))
+                            .font(.title3).fontWeight(.semibold).foregroundColor(.white)
+                        Text(selectedDate.formatted(.dateTime.year()))
+                            .font(.title3).fontWeight(.light).foregroundColor(Color(white: 0.65))
+                    }
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 4)
+
+            WeekStripPicker(selectedDate: $selectedDate)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// Original scrolling day-dial layout: month/year on the left, dial on the right.
+    private var dialHeader: some View {
+        HStack(alignment: .center, spacing: 8) {
+            monthLabel {
+                VStack(alignment: .leading) {
+                    Text(selectedDate.formatted(.dateTime.month(.abbreviated)))
+                        .font(.title3).fontWeight(.semibold).foregroundColor(.white)
+                    Text(selectedDate.formatted(.dateTime.year()))
+                        .font(.title3).fontWeight(.light).foregroundColor(Color(white: 0.65))
+                }
+            }
+
+            ZStack(alignment: .top) {
+                WheelPicker(selectedDate: $selectedDate, config: Config(), anchorDate: dialAnchor)
+                    .id(dialAnchor)
+                HStack(alignment: .top) {
+                    LinearGradient(
+                        colors: [Color.black, .clear], startPoint: .leading, endPoint: .trailing
+                    )
+                    .frame(width: 20)
+                    Spacer()
+                    LinearGradient(
+                        colors: [.clear, Color.black], startPoint: .leading, endPoint: .trailing
+                    )
+                    .frame(width: 20)
+                }
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+struct EmptyEventsView: View {
+    let selectedDate: Date
+
+    var body: some View {
+        VStack {
+            Image(systemName: "calendar.badge.checkmark")
+                .font(.title)
+                .foregroundColor(Color(white: 0.65))
+            Text(Calendar.current.isDateInToday(selectedDate) ? "No events today" : "No events")
+                .font(.subheadline)
+                .foregroundColor(.white)
+            Text("Enjoy your free time!")
+                .font(.caption)
+                .foregroundColor(Color(white: 0.65))
+        }
+    }
+}
+
+struct EventListView: View {
+    @Environment(\.openURL) private var openURL
+    @ObservedObject private var calendarManager = CalendarManager.shared
+    let events: [EventModel]
+    @Default(.autoScrollToNextEvent) private var autoScrollToNextEvent
+    @Default(.showFullEventTitles) private var showFullEventTitles
+    @State private var hoveredEventID: String?
+
+    static func filteredEvents(events: [EventModel]) -> [EventModel] {
+        events.filter { event in
+            if event.type.isReminder {
+                if case .reminder(let completed) = event.type {
+                    return !completed || !Defaults[.hideCompletedReminders]
+                }
+            }
+            // Filter out all-day events if setting is enabled
+            if event.isAllDay && Defaults[.hideAllDayEvents] {
+                return false
+            }
+            return true
+        }
+    }
+
+    private var filteredEvents: [EventModel] {
+        Self.filteredEvents(events: events)
+    }
+
+    private func scrollToRelevantEvent(proxy: ScrollViewProxy) {
+        let now = Date()
+        // Determine a single target using preferred search order:
+        // 1) first non-all-day upcoming/in-progress event
+        // 2) first all-day event
+        // 3) last event (fallback)
+        let nonAllDayUpcoming = filteredEvents.first(where: { !$0.isAllDay && $0.end > now })
+        let firstAllDay = filteredEvents.first(where: { $0.isAllDay })
+        let lastEvent = filteredEvents.last
+        guard let target = nonAllDayUpcoming ?? firstAllDay ?? lastEvent else { return }
+
+        Task { @MainActor in
+            withTransaction(Transaction(animation: nil)) {
+                proxy.scrollTo(target.id, anchor: .top)
+            }
+        }
+    }
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            List {
+                ForEach(filteredEvents) { event in
+                    Button(action: {
+                        if let link = event.meetingLink, Defaults[.joinMeetingOnEventTap] {
+                            openURL(link.url)
+                        } else if let url = event.calendarAppURL() {
+                            openURL(url)
+                        }
+                    }) {
+                        eventRow(event, isHovered: hoveredEventID == event.id)
+                    }
+                    .id(event.id)
+                    .padding(.leading, -5)
+                    .buttonStyle(PlainButtonStyle())
+                    .onHover { hovering in
+                        // Guarded: moving between adjacent rows fires the new row's
+                        // enter before the old row's exit, so an unguarded nil would
+                        // clear the wrong row.
+                        if hovering {
+                            hoveredEventID = event.id
+                        } else if hoveredEventID == event.id {
+                            hoveredEventID = nil
+                        }
+                    }
+                    .contextMenu {
+                        if let url = event.calendarAppURL() {
+                            Button("Open in Calendar") { openURL(url) }
+                        }
+                        if let link = event.meetingLink {
+                            Button("Copy Meeting Link") {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(link.url.absoluteString, forType: .string)
+                            }
+                        }
+                    }
+                    .listRowSeparator(.automatic)
+                    .listRowSeparatorTint(.gray.opacity(0.2))
+                    .listRowBackground(Color.clear)
+                }
+            }
+            .listStyle(.plain)
+            .scrollIndicators(.never)
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
+            .onAppear {
+                scrollToRelevantEvent(proxy: proxy)
+            }
+            .onChange(of: filteredEvents) { _, _ in
+                scrollToRelevantEvent(proxy: proxy)
+            }
+        }
+        Spacer(minLength: 0)
+    }
+
+    private func eventRow(_ event: EventModel, isHovered: Bool) -> some View {
+        if event.type.isReminder {
+            let isCompleted: Bool
+            if case .reminder(let completed) = event.type {
+                isCompleted = completed
+            } else {
+                isCompleted = false
+            }
+            return AnyView(
+                HStack(spacing: 8) {
+                    ReminderToggle(
+                        isOn: Binding(
+                            get: { isCompleted },
+                            set: { newValue in
+                                Task {
+                                    await calendarManager.setReminderCompleted(
+                                        reminderID: event.id, completed: newValue
+                                    )
+                                }
+                            }
+                        ),
+                        color: Color(event.calendar.color)
+                    )
+                    .opacity(1.0)  // Ensure the toggle is always fully opaque
+                    HStack {
+                        Text(event.title)
+                            .font(.callout)
+                            .foregroundColor(.white)
+                            .lineLimit(showFullEventTitles ? nil : 1)
+                        Spacer(minLength: 0)
+                        VStack(alignment: .trailing, spacing: 4) {
+                            if event.isAllDay {
+                                Text("All-day")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                            } else {
+                                Text(event.start, style: .time)
+                                    .foregroundColor(.white)
+                                    .font(.caption)
+                            }
+                        }
+                    }
+                    .opacity(
+                        isCompleted
+                            ? 0.4
+                            : event.start < Date.now && Calendar.current.isDateInToday(event.start)
+                                ? 0.6 : 1.0
+                    )
+                }
+                .padding(.vertical, 4)
+            )
+        } else {
+            return AnyView(
+                HStack(alignment: .top, spacing: 4) {
+                    Rectangle()
+                        .fill(Color(event.calendar.color))
+                        .frame(width: 3)
+                        .cornerRadius(1.5)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(event.title)
+                            .font(.callout)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                            .lineLimit(showFullEventTitles ? nil : 2)
+
+                        if let location = event.location, !location.isEmpty {
+                            Text(location)
+                                .font(.caption)
+                                .foregroundColor(Color(white: 0.65))
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer(minLength: 0)
+
+                    // Joinable indicator. The 16pt frame lives on the Group, not the
+                    // Image, so the column holds its width whether or not a glyph is
+                    // drawn — otherwise the time column goes ragged between rows.
+                    Group {
+                        if let link = event.meetingLink {
+                            Image(systemName: "video.fill")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(isHovered ? Color.effectiveAccent : .white.opacity(0.5))
+                                .padding(3)
+                                .background(
+                                    Capsule().fill(isHovered ? Color.gray.opacity(0.2) : .clear)
+                                )
+                                .animation(.smooth(duration: 0.3), value: isHovered)
+                                .accessibilityLabel("Join \(link.provider.displayName) meeting")
+                        } else {
+                            Color.clear
+                        }
+                    }
+                    .frame(width: 16)
+
+                    VStack(alignment: .trailing, spacing: 4) {
+                        if event.isAllDay {
+                            Text("All-day")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                        } else {
+                            Text(event.start, style: .time)
+                                .foregroundColor(.white)
+                            Text(event.end, style: .time)
+                                .foregroundColor(Color(white: 0.65))
+                        }
+                    }
+                    .font(.caption)
+                    .frame(minWidth: 44, alignment: .trailing)
+                }
+                .opacity(
+                    event.eventStatus == .ended && Calendar.current.isDateInToday(event.start)
+                        ? 0.6 : 1.0)
+            )
+        }
+    }
+}
+
+struct ReminderToggle: View {
+    @Binding var isOn: Bool
+    var color: Color
+
+    var body: some View {
+        Button(action: {
+            isOn.toggle()
+        }) {
+            ZStack {
+                // Outer ring
+                Circle()
+                    .strokeBorder(color, lineWidth: 2)
+                    .frame(width: 14, height: 14)
+                // Inner fill
+                if isOn {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 8, height: 8)
+                }
+                Circle()
+                    .fill(Color.black.opacity(0.001))
+                    .frame(width: 14, height: 14)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .padding(0)
+        .accessibilityLabel(isOn ? "Mark as incomplete" : "Mark as complete")
+    }
+}
+
+#Preview {
+    CalendarView()
+        .frame(width: 215, height: 130)
+        .background(.black)
+        .environmentObject(BoringViewModel(camera: CameraModel()))
+}
