@@ -1,6 +1,176 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "This Telegram notification can no longer open its chat." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уведомление Telegram больше не может открыть этот чат."
+          }
+        }
+      }
+    },
+    "Opens the chat from this notification" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывает чат, из которого пришло уведомление"
+          }
+        }
+      }
+    },
+    "Enable Network HUD" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать сетевой индикатор"
+          }
+        }
+      }
+    },
+    "Wi-Fi connections" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключения Wi-Fi"
+          }
+        }
+      }
+    },
+    "Connection lost and restored" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Потеря и восстановление связи"
+          }
+        }
+      }
+    },
+    "Show network name" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать имя сети"
+          }
+        }
+      }
+    },
+    "Personal Hotspot appears as Wi-Fi when macOS does not identify it." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Режим модема отображается как Wi-Fi, если macOS не сообщает тип подключения."
+          }
+        }
+      }
+    },
+    "Network HUD duration" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Длительность сетевого индикатора"
+          }
+        }
+      }
+    },
+    "Request Location access for Wi-Fi names" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запросить доступ к геопозиции для имён сетей Wi-Fi"
+          }
+        }
+      }
+    },
+    "macOS requires Location access to show Wi-Fi names." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для показа имён сетей Wi-Fi macOS требует доступ к геопозиции."
+          }
+        }
+      }
+    },
+    "Wi-Fi network changed" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сеть Wi-Fi изменилась"
+          }
+        }
+      }
+    },
+    "Wi-Fi connected" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wi-Fi подключён"
+          }
+        }
+      }
+    },
+    "Connected" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подключено"
+          }
+        }
+      }
+    },
+    "Disconnected" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отключено"
+          }
+        }
+      }
+    },
+    "Network" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сеть"
+          }
+        }
+      }
+    },
+    "Connection lost" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Связь потеряна"
+          }
+        }
+      }
+    },
+    "Connection restored" : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Связь восстановлена"
+          }
+        }
+      }
+    },
     "Notification layout" : {
       "localizations" : {
         "ru" : {

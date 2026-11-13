@@ -149,13 +149,10 @@ final class ShelfStateViewModel: ObservableObject {
         guard empty || !temporaryFiles.isEmpty else { return }
         Task {
             let paths = await Bookmark.onWorker {
-                let referenced = Set(remainingItems.compactMap { item -> URL? in
-                    guard case .file(let data) = item.kind else { return nil }
-                    return Bookmark(data: data).resolvedURL?.standardizedFileURL
-                })
+                let referenced = ShelfPersistenceService.cleanupReferences(in: remainingItems)
                 return temporaryFiles.compactMap { data, knownURL in
                     let url = knownURL ?? Bookmark(data: data).resolvedURL
-                    if let url, !referenced.contains(url.standardizedFileURL) {
+                    if let url, let referenced, !referenced.contains(url.standardizedFileURL) {
                         TemporaryFileStorageService.shared.removeTemporaryFileIfNeeded(at: url)
                     }
                     return url

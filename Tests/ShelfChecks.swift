@@ -13,6 +13,7 @@ struct ShelfChecks {
         do {
             try await checkStorageOwnership()
             try await checkBatchOperations()
+            try await checkUnresolvedRemainingBookmark()
             try await checkReaddition()
             try await checkPaste()
             try await checkDropRepresentations()
@@ -372,6 +373,30 @@ struct ShelfChecks {
         try require(extract.terminationStatus == 0 && extracted == contents, "archive overwrote an input named Archive.zip")
         print("Shelf cache: nine 1 B / 1 MiB / 16 MiB cycles returned to 0 payload bytes; leases and restart references preserved")
         print("Shelf cleanup preserved originals and removed its owned copy")
+    }
+
+    @MainActor
+    private static func checkUnresolvedRemainingBookmark() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let persistence = ShelfPersistenceService(fileURL: root.appendingPathComponent("items.json"))
+        let storage = TemporaryFileStorageService.shared
+        guard let url = await storage.createTempFile(for: .text("bookmark fixture")) else {
+            throw Failure(reason: "could not create bookmark fixture")
+        }
+        defer { storage.removeTemporaryFileIfNeeded(at: url) }
+        let owned = ShelfItem(kind: .file(bookmark: try Bookmark(url: url).data), isTemporary: true)
+        let unresolved = ShelfItem(kind: .file(bookmark: Data([1, 2, 3])))
+        persistence.save([owned, unresolved])
+        let reopened = ShelfStateViewModel(persistence: persistence, selection: ShelfSelectionModel())
+        reopened.remove(owned)
+        try await Task.sleep(for: .milliseconds(25))
+        await Bookmark.onWorker {}
+        try require(reopened.items == [unresolved], "unresolved card was removed")
+        try require(FileManager.default.fileExists(atPath: url.path),
+                    "deletion treated an unresolved remaining bookmark as proof that a file was unused")
+        print("Shelf preserves owned files while a remaining bookmark cannot be resolved")
     }
 
     @MainActor

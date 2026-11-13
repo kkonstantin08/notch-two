@@ -41,6 +41,37 @@ final class IterationTwoTests: XCTestCase {
         }
     }
 
+    func testTelegramCardDoesNotFallBackToTheAppWhenItsChatIsUnavailable() async throws {
+        let enabled = Defaults[.notificationLiveActivity]
+        let duration = Defaults[.notificationDisplayDuration]
+        let all = Defaults[.notificationsFromAllApps]
+        let excluded = Defaults[.notificationExcludedApps]
+        let manager = SystemNotificationManager.shared
+        manager.stop()
+        defer {
+            manager.stop()
+            Defaults[.notificationLiveActivity] = enabled
+            Defaults[.notificationDisplayDuration] = duration
+            Defaults[.notificationsFromAllApps] = all
+            Defaults[.notificationExcludedApps] = excluded
+        }
+
+        Defaults[.notificationLiveActivity] = true
+        Defaults[.notificationDisplayDuration] = 0
+        Defaults[.notificationsFromAllApps] = true
+        Defaults[.notificationExcludedApps] = []
+        await manager.start()
+        NotificationCenter.default.post(name: .systemNotificationDidAppear, object: nil,
+            userInfo: ["token": "telegram-expired", "appName": "Telegram", "bundleID": "ru.keepcoder.Telegram"])
+        try await Task.sleep(for: .milliseconds(30))
+        let notice = try XCTUnwrap(manager.activeNotification)
+        XCTAssertTrue(notice.isTelegram)
+
+        let opened = await manager.openAndDismiss(notice)
+        XCTAssertFalse(opened)
+        XCTAssertEqual(manager.activeNotification?.id, notice.id)
+    }
+
     func testNativeFallbackWithdrawsOnlyAffectedCards() async {
         let enabled = Defaults[.notificationLiveActivity]
         let all = Defaults[.notificationsFromAllApps]

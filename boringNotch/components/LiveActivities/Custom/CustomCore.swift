@@ -23,12 +23,30 @@ struct SourceLifecycle {
     func accepts(_ id: UUID) -> Bool { session == id }
 }
 
-struct ConnectionTransition {
-    private var previous: Bool?
+struct NetworkTransition {
+    enum Event: Equatable {
+        case wifiConnected(String?), wifiDisconnected, wifiChanged(String?)
+        case connectionLost, connectionRestored
+    }
 
-    mutating func update(_ connected: Bool) -> Bool {
-        defer { previous = connected }
-        return previous.map { $0 != connected } ?? false
+    private var previous: (online: Bool, wifi: Bool, ssid: String?)?
+
+    mutating func update(online: Bool, wifi: Bool, ssid: String?, ssidChanged: Bool = false,
+                         reportConnection: Bool = true) -> [Event] {
+        let old = previous
+        let name = wifi ? ssid ?? (ssidChanged ? nil : old?.ssid) : nil
+        previous = (online, wifi, name)
+        guard let old else { return [] }
+        var events: [Event] = []
+        if reportConnection, old.online != online {
+            events.append(online ? .connectionRestored : .connectionLost)
+        }
+        if old.wifi != wifi {
+            events.append(wifi ? .wifiConnected(name) : .wifiDisconnected)
+        } else if wifi, ssidChanged || (old.ssid != nil && name != old.ssid) {
+            events.append(.wifiChanged(name))
+        }
+        return events
     }
 }
 

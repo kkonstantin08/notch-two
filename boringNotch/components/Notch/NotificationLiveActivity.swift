@@ -81,6 +81,8 @@ struct NotificationExpandedView: View {
     @State private var canSend = false
     @State private var replyUnavailable = false
     @State private var replyError: LocalizedStringKey?
+    @State private var isOpeningSource = false
+    @State private var sourceUnavailable = false
     let notification: SystemNotification
     let showsMore: Bool
 
@@ -102,12 +104,25 @@ struct NotificationExpandedView: View {
                 Text(replyError)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            } else if sourceUnavailable {
+                Text("This Telegram notification can no longer open its chat.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal, 14)
         .padding(.top, 10)
         .frame(width: isExpanded ? 505 : 400, alignment: .topLeading)
         .fixedSize(horizontal: false, vertical: true)
+        .background {
+            if replySession == nil {
+                Button(action: openSourceApp) {
+                    Color.clear.contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHidden(true)
+            }
+        }
         .onChange(of: telegramReplies) { _, enabled in
             if !enabled { endReply() }
         }
@@ -267,7 +282,13 @@ struct NotificationExpandedView: View {
     }
 
     private func openSourceApp() {
-        Task { await manager.openAndDismiss(notification) }
+        guard !isOpeningSource, replySession == nil else { return }
+        isOpeningSource = true
+        Task {
+            defer { isOpeningSource = false }
+            if await manager.openAndDismiss(notification) { return }
+            sourceUnavailable = notification.isTelegram && manager.activeNotification == notification
+        }
     }
 }
 
@@ -361,7 +382,9 @@ struct NotificationCardContent<Actions: View>: View {
                 }
             }
         }
-        .accessibilityHint("Opens \(notification.appName ?? "the app")")
+        .accessibilityHint(notification.isTelegram
+            ? Text("Opens the chat from this notification")
+            : Text("Opens \(notification.appName ?? "the app")"))
     }
 
     private func sourceButton<Label: View>(@ViewBuilder label: () -> Label) -> some View {

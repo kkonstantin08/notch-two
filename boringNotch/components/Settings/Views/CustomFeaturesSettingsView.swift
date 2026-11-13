@@ -1,8 +1,10 @@
+import CoreLocation
 import Defaults
 import SwiftUI
 
 struct CustomFeaturesSettingsView: View {
     @Default(.customWellnessOptions) private var wellness
+    @Default(.customNetworkOptions) private var network
     @Default(.customFeatures) private var features
     @Default(.customCalendarOptions) private var calendar
     @Default(.customPomodoroOptions) private var pomodoro
@@ -73,7 +75,21 @@ struct CustomFeaturesSettingsView: View {
 
             Section("System") {
                 feature(.capsLock, "Caps Lock indicator")
-                feature(.wifi, "Wi-Fi connection alerts")
+                feature(.wifi, "Enable Network HUD")
+                if enabled(.wifi) {
+                    Toggle("Wi-Fi connections", isOn: $network.wifiConnections)
+                    Toggle("Connection lost and restored", isOn: $network.connectionLoss)
+                    if network.wifiConnections {
+                        Toggle("Show network name", isOn: $network.showName)
+                        if network.showName { NetworkNamePermissionButton() }
+                        Text("Personal Hotspot appears as Wi-Fi when macOS does not identify it.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    DurationField("Network HUD duration", value: Binding(
+                        get: { network.seconds ?? seconds },
+                        set: { network.seconds = $0 }
+                    ), unit: .seconds, range: 1...15)
+                }
                 if enabled(.capsLock) {
                     Text("Caps Lock detection in other apps uses macOS Accessibility access.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -180,5 +196,17 @@ private struct CustomCalendarSelection: View {
                 }
             }
         }
+    }
+}
+
+private struct NetworkNamePermissionButton: View {
+    @State private var location = CLLocationManager()
+
+    var body: some View {
+        Button("Request Location access for Wi-Fi names") {
+            location.requestWhenInUseAuthorization()
+        }
+        Text("macOS requires Location access to show Wi-Fi names.")
+            .font(.caption).foregroundStyle(.secondary)
     }
 }

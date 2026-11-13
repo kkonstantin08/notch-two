@@ -82,13 +82,7 @@ final class CustomCoreTests: XCTestCase {
         XCTAssertNil(CalendarOccurrence.active(in: [early, late], at: now.addingTimeInterval(200)))
     }
 
-    func testTransitionSuppressesInitialStateAndIdenticalUpdates() {
-        var transition = ConnectionTransition()
-        XCTAssertFalse(transition.update(true))
-        XCTAssertFalse(transition.update(true))
-        XCTAssertTrue(transition.update(false))
-        XCTAssertFalse(transition.update(false))
-    }
+
 }
 
 extension CustomCoreTests {
@@ -124,5 +118,32 @@ extension CustomCoreTests {
             XCTAssertNil(clock.deadline)
             XCTAssertFalse(clock.advance(at: now.addingTimeInterval(99999), interval: 1200, rest: 20))
         }
+    }
+}
+
+extension CustomCoreTests {
+    func testNetworkReportsRouteChangesWithoutInventingWiFiChanges() {
+        var transition = NetworkTransition()
+        XCTAssertEqual(transition.update(online: true, wifi: true, ssid: "Home"), [])
+        XCTAssertEqual(transition.update(online: true, wifi: true, ssid: nil), [])
+        XCTAssertEqual(transition.update(online: true, wifi: true, ssid: "Home"), [])
+        XCTAssertEqual(transition.update(online: true, wifi: true, ssid: "Work"), [.wifiChanged("Work")])
+        // Ethernet can become the default route while Wi-Fi remains associated.
+        XCTAssertEqual(transition.update(online: true, wifi: true, ssid: "Work"), [])
+        XCTAssertEqual(transition.update(online: true, wifi: false, ssid: nil), [.wifiDisconnected])
+        XCTAssertEqual(transition.update(online: false, wifi: false, ssid: nil), [.connectionLost])
+        XCTAssertEqual(transition.update(online: false, wifi: false, ssid: nil), [])
+        XCTAssertEqual(transition.update(online: true, wifi: true, ssid: nil),
+                       [.connectionRestored, .wifiConnected(nil)])
+        XCTAssertEqual(transition.update(online: false, wifi: false, ssid: nil),
+                       [.connectionLost, .wifiDisconnected])
+    }
+
+    func testNetworkPreservesWiFiOnlyAlertsWithoutPermission() {
+        var transition = NetworkTransition()
+        XCTAssertEqual(transition.update(online: true, wifi: true, ssid: nil), [])
+        XCTAssertEqual(transition.update(online: true, wifi: true, ssid: nil, ssidChanged: true), [.wifiChanged(nil)])
+        XCTAssertEqual(transition.update(online: false, wifi: false, ssid: nil, reportConnection: false), [.wifiDisconnected])
+        XCTAssertEqual(transition.update(online: true, wifi: true, ssid: nil, reportConnection: false), [.wifiConnected(nil)])
     }
 }

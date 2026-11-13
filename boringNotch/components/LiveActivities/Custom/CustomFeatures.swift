@@ -1,7 +1,6 @@
 import AppKit
 import Combine
 import Defaults
-import Network
 
 struct CustomCalendarOptions: Codable, Defaults.Serializable, Equatable {
     var leadMinutes = 10
@@ -42,7 +41,16 @@ struct CustomWellnessOptions: Codable, Defaults.Serializable, Equatable {
     var snooze: TimeInterval { TimeInterval(max(1, min(snoozeMinutes, 60))) * 60 }
 }
 
+struct CustomNetworkOptions: Codable, Defaults.Serializable, Equatable {
+    var wifiConnections = true
+    var connectionLoss = false
+    var showName = false
+    var seconds: Int?
+}
+
 extension Defaults.Keys {
+    static let customNetworkOptions = Key<CustomNetworkOptions>("customNetworkOptions", default: .init())
+
     static let customWellnessOptions = Key<CustomWellnessOptions>("customWellnessOptions", default: .init())
     static let customFeatures = Key<Set<String>>("customFeatures", default: [])
     static let customCalendarOptions = Key<CustomCalendarOptions>("customCalendarOptions", default: .init())
@@ -87,9 +95,10 @@ final class CustomFeatures: ObservableObject {
     private var pomodoroTask: Task<Void, Never>?
     private var wakeObserver: NSObjectProtocol?
     private var clockObserver: NSObjectProtocol?
-    private var wifiMonitor: NWPathMonitor?
+    private var wifiMonitor: CustomNetwork?
     private var wifiLife = SourceLifecycle()
-    private var wifiTransition = ConnectionTransition()
+    private var wifiSleepObservers: [NSObjectProtocol] = []
+    private var wifiAsleep = false
     private var capsLife = SourceLifecycle()
     private var capsGlobal: Any?
     private var capsLocal: Any?
@@ -124,6 +133,17 @@ final class CustomFeatures: ObservableObject {
         }.store(in: &subscriptions)
         Defaults.publisher(.customWellnessOptions).sink { [weak self] _ in
             Task { @MainActor in self?.restartWellness() }
+        }.store(in: &subscriptions)
+        Defaults.publisher(.customNetworkOptions, options: []).sink { [weak self] change in
+            Task { @MainActor in
+                guard let self, !self.subscriptions.isEmpty, CustomFeature.wifi.isEnabled else { return }
+                if change.oldValue.showName != change.newValue.showName
+                    || change.oldValue.wifiConnections != change.newValue.wifiConnections
+                    || change.oldValue.connectionLoss != change.newValue.connectionLoss {
+                    self.resetWiFi()
+                    self.startWiFi()
+                }
+            }
         }.store(in: &subscriptions)
         reconcile()
     }
@@ -307,7 +327,11 @@ final class CustomFeatures: ObservableObject {
 
     private func enqueue(_ message: CustomNotice, sound: Bool = false) {
         guard message.source.isEnabled else { return }
-        let duration = message.source == .bluetooth ? Defaults[.customBluetoothSeconds] : Defaults[.customNoticeSeconds]
+        let duration = switch message.source {
+        case .bluetooth: Defaults[.customBluetoothSeconds]
+        case .wifi: Defaults[.customNetworkOptions].seconds ?? Defaults[.customNoticeSeconds]
+        default: Defaults[.customNoticeSeconds]
+        }
         notices.push(message, at: Date(), duration: TimeInterval(duration), sound: sound)
         publishNotice()
     }
@@ -410,27 +434,77 @@ final class CustomFeatures: ObservableObject {
     }
 
     private func startWiFi() {
-        guard let session = wifiLife.start() else { return }
-        wifiTransition = .init()
-        let monitor = NWPathMonitor(requiredInterfaceType: .wifi)
-        monitor.pathUpdateHandler = { [weak self] path in
-            let connected = path.status == .satisfied
-            Task { @MainActor in
-                guard let self, self.wifiLife.accepts(session), self.wifiTransition.update(connected) else { return }
-                self.enqueue(.init(source: .wifi, key: String(connected), title: "Wi-Fi",
-                              detail: connected ? "Connected" : "Disconnected", icon: connected ? "wifi" : "wifi.slash"))
+        let options = Defaults[.customNetworkOptions]
+        guard options.wifiConnections || options.connectionLoss else { stopWiFi(); return }
+        if wifiSleepObservers.isEmpty {
+            let center = NSWorkspace.shared.notificationCenter
+            for (name, sleeping) in [(NSWorkspace.willSleepNotification, true), (NSWorkspace.didWakeNotification, false)] {
+                wifiSleepObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                    MainActor.assumeIsolated {
+                        guard let self, CustomFeature.wifi.isEnabled, !self.wifiSleepObservers.isEmpty else { return }
+                        self.wifiAsleep = sleeping
+                        self.resetWiFi()
+                        if !sleeping { self.startWiFi() }
+                    }
+                })
             }
         }
-        wifiMonitor = monitor
-        monitor.start(queue: DispatchQueue(label: "notch.custom.wifi", qos: .utility))
+        guard !wifiAsleep, let session = wifiLife.start() else { return }
+        wifiMonitor = CustomNetwork(showName: options.showName, observeWiFi: options.wifiConnections,
+                                    reportConnection: options.connectionLoss) { [weak self] event in
+            Task { @MainActor in
+                guard let self, self.wifiLife.accepts(session) else { return }
+                self.handleNetworkEvent(event)
+            }
+        }
+    }
+
+    private func handleNetworkEvent(_ event: NetworkTransition.Event) {
+        let options = Defaults[.customNetworkOptions]
+        let title: String
+        let detail: String
+        let icon: String
+        switch event {
+        case .wifiConnected(let name), .wifiChanged(let name):
+            guard options.wifiConnections else { return }
+            if case .wifiChanged = event { title = String(localized: "Wi-Fi network changed") }
+            else { title = String(localized: "Wi-Fi connected") }
+            detail = (options.showName ? name : nil) ?? String(localized: "Connected")
+            icon = "wifi"
+        case .wifiDisconnected:
+            guard options.wifiConnections else { return }
+            title = "Wi-Fi"
+            detail = String(localized: "Disconnected")
+            icon = "wifi.slash"
+        case .connectionLost:
+            guard options.connectionLoss else { return }
+            title = String(localized: "Network")
+            detail = String(localized: "Connection lost")
+            icon = "wifi.slash"
+        case .connectionRestored:
+            guard options.connectionLoss else { return }
+            title = String(localized: "Network")
+            detail = String(localized: "Connection restored")
+            icon = "network"
+        }
+        enqueue(.init(source: .wifi, key: UUID().uuidString, title: title, detail: detail, icon: icon))
+    }
+
+    private func resetWiFi() {
+        if wifiLife.stop() {
+            wifiMonitor?.stop()
+            wifiMonitor = nil
+        }
+        notices.remove(.wifi, at: Date())
+        publishNotice()
     }
 
     private func stopWiFi() {
-        guard wifiLife.stop() else { return }
-        wifiMonitor?.pathUpdateHandler = nil
-        wifiMonitor?.cancel()
-        wifiMonitor = nil
-        wifiTransition = .init()
+        guard !wifiSleepObservers.isEmpty else { return }
+        wifiSleepObservers.forEach(NSWorkspace.shared.notificationCenter.removeObserver)
+        wifiSleepObservers = []
+        wifiAsleep = false
+        resetWiFi()
     }
 
     private func startCapsLock() {

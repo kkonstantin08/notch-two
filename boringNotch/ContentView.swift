@@ -302,18 +302,6 @@ struct ContentView: View {
                         vm.notchState == .open ? openedInsets.top : cornerRadiusInsets.closed.bottom
                     )
                     .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
-                    .background {
-                        if vm.notchState == .open, !vm.isComposingNotificationReply,
-                           let notification = notificationManager.activeNotification {
-                            Button {
-                                Task { await notificationManager.openAndDismiss(notification) }
-                            } label: {
-                                Color.clear.contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityHidden(true)
-                        }
-                    }
                     .background(.black)
                     .clipShape(currentNotchShape)
                           .overlay(alignment: .top) {
@@ -362,11 +350,10 @@ struct ContentView: View {
                     .onHover { hovering in
                         handleHover(hovering)
                     }
-                    .onTapGesture {
-                        if vm.notchState == .closed && !shouldDisplayNowPlayingFallbackNotice {
-                            doOpen()
-                        }
-                    }
+                    .gesture(
+                        TapGesture().onEnded { doOpen() },
+                        including: vm.notchState == .closed && !shouldDisplayNowPlayingFallbackNotice ? .all : .subviews
+                    )
                     .conditionalModifier(Defaults[.enableGestures] && !shouldDisplayNowPlayingFallbackNotice) { view in
                         view
                             .panGesture(direction: .down) { translation, phase in
@@ -570,7 +557,7 @@ struct ContentView: View {
                       .zIndex(1)
             if vm.notchState == .open {
                 VStack {
-                    if notificationManager.activeNotification == nil, let notice = custom.notice {
+                    if notificationManager.activeNotification == nil, let notice = custom.notice, notice.source != .wifi {
                         Label {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(notice.title).font(.subheadline.weight(.semibold))

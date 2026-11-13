@@ -206,18 +206,22 @@ final class SystemNotificationManager: ObservableObject {
         }
     }
 
-    func openAndDismiss(_ notification: SystemNotification, fromReplyFallback: Bool = false) async {
+    @discardableResult
+    func openAndDismiss(_ notification: SystemNotification, fromReplyFallback: Bool = false) async -> Bool {
         guard (activeNotification == notification || fromReplyFallback),
-              !presentation.isComposing, !isOpeningNotification else { return }
+              !presentation.isComposing, !isOpeningNotification else { return false }
         isOpeningNotification = true
         defer { isOpeningNotification = false }
-        if await open(notification) { dismiss(notification) }
+        guard await open(notification, allowAppFallback: fromReplyFallback) else { return false }
+        dismiss(notification)
+        return true
     }
 
-    private func open(_ notification: SystemNotification) async -> Bool {
+    private func open(_ notification: SystemNotification, allowAppFallback: Bool) async -> Bool {
         if let actionID = notification.nativeActionID,
            await XPCHelperClient.shared.openNotification(actionID) { return true }
 
+        guard allowAppFallback || !notification.isTelegram else { return false }
         let workspace = NSWorkspace.shared
 
         for bundleID in candidateBundleIDs(for: notification) {
