@@ -6,7 +6,7 @@
       <rect width="1200" height="402" rx="24"/>
     </clipPath>
     <clipPath id="cover">
-      <rect x="282" y="141" width="118" height="118" rx="17"/>
+      <rect x="49" y="139" width="173" height="173" rx="25"/>
     </clipPath>
     <linearGradient id="desktop" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
       <stop stop-color="#262d59"/>
@@ -28,10 +28,6 @@
       <stop offset=".5" stop-color="#8068b6"/>
       <stop offset="1" stop-color="#f9b8a4"/>
     </linearGradient>
-    <linearGradient id="shadow" x2="0" y2="1" gradientUnits="objectBoundingBox">
-      <stop stop-color="#121222" stop-opacity=".5"/>
-      <stop offset="1" stop-color="#121222" stop-opacity="0"/>
-    </linearGradient>
   </defs>
 
   <g clip-path="url(#frame)">
@@ -43,67 +39,99 @@
     <rect width="1200" height="57" fill="#10101b" fill-opacity=".68"/>
     <path d="M0 57h1200" stroke="#d6c9ef" stroke-opacity=".17"/>
 
-    <path d="M238 259h724v22c0 34-20 57-51 57H289c-31 0-51-23-51-57Z" fill="url(#shadow)"/>
-    <path d="M218 0q20 0 20 20v256c0 27 19 46 46 46h632c27 0 46-19 46-46V20q0-20 20-20" fill="#09090d" stroke="#cbc1e0" stroke-opacity=".27" stroke-width="2"/>
+    <path d="M117 0q20 0 20 20v264q0 46 46 46h834q46 0 46-46V20q0-20 20-20" fill="#000" stroke="#b4a4d0" stroke-opacity=".24"/>
+    <text x="1172" y="36" text-anchor="end" fill="#f4f3f8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="21" font-weight="600">23:26</text>
 
-    <g fill="#f4f3f8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="600">
-      <path d="M985 24q10-9 20 0m-16 4q6-5 12 0m-9 4q3-2.5 6 0" fill="none" stroke="#f4f3f8" stroke-width="2.5" stroke-linecap="round"/>
-      <circle cx="995" cy="36" r="1.5"/>
-      <rect x="1020" y="20" width="35" height="18" rx="5"/>
-      <path d="M1057 26q3 0 3 3t-3 3Z"/>
-      <text x="1024" y="34" fill="#161523" font-size="14">80</text>
-      <path d="m1051 21-5 8h3l-1 6 6-8h-4Z" fill="#161523"/>
-      <rect x="1075" y="20" width="18" height="7" rx="3.5" fill="none" stroke="#f4f3f8" stroke-width="1.5"/>
-      <circle cx="1080" cy="23.5" r="2.3"/>
-      <rect x="1074.25" y="30.25" width="19.5" height="8.5" rx="4.25"/>
-      <circle cx="1088" cy="34.5" r="2.5" fill="#161523"/>
-      <text x="1112" y="36" font-size="21">23:26</text>
-    </g>
+    <g transform="translate(142 5) scale(.78)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+      <g id="tabs">
+        <rect x="2" y="12" width="97" height="51" rx="25.5" fill="#131313"/>
+        <path d="M36 37l14-12 14 12m-5-4v-6" fill="none" stroke="#ddd" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M39 38l11-10 11 10v11q0 3-3 3H42q-3 0-3-3Z" fill="#ddd"/>
+        <rect x="47" y="41" width="6" height="11" rx="1.5" fill="#131313"/>
+        <path d="M133 38l7-9h14l7 9v8q0 2-2 2h-24q-2 0-2-2Z" fill="none" stroke="#838383" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M133 38h10l2 4h4l2-4h10v8q0 2-2 2h-24q-2 0-2-2Z" fill="#838383"/>
+      </g>
 
-    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
-      <rect x="282" y="77" width="52" height="36" rx="12" fill="#292633"/>
-      <path d="m299 96 9-8 9 8v7h-18Z" stroke="#f3e9fc"/>
-      <path d="M354 89h24l-3 14h-18Zm1 6h7l2 3h4l2-3h7" stroke="#a39caf"/>
-      <path d="M407 90h19m-19 12h19" stroke="#a39caf"/>
-      <circle cx="413" cy="90" r="3" fill="#09090d" stroke="#a39caf"/>
-      <circle cx="420" cy="102" r="3" fill="#09090d" stroke="#a39caf"/>
-    </g>
+      <g id="panel-status" fill="#fff">
+        <g fill="none" stroke="#fff">
+          <circle cx="989" cy="39" r="13" stroke-width="4" stroke-dasharray="1.5 2.2"/>
+          <circle cx="989" cy="39" r="10.5" stroke-width="2"/>
+          <path d="m984 29 5 10-6 9m6-9h11" stroke-width="2"/>
+        </g>
+        <text x="1028" y="47" font-size="24" font-weight="600">80%</text>
+        <rect x="1097" y="25" width="55" height="26" rx="7.5" fill="none" stroke="#747474" stroke-width="1.7"/>
+        <path d="M1155 33q4 0 4 5t-4 5Z" fill="#747474"/>
+        <rect x="1100" y="28.5" width="39" height="19" rx="4.5" fill="#32d257"/>
+        <path d="M1118 29h2v-4a2 2 0 0 1 4 0v4h4v-4a2 2 0 0 1 4 0v4h2a2 2 0 0 1 2 2v4q0 5-5 8v7a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-7q-5-3-5-8v-4a2 2 0 0 1 2-2Z" stroke="#000" stroke-width="2.8"/>
+      </g>
 
-    <g clip-path="url(#cover)">
-      <rect x="282" y="141" width="118" height="118" fill="url(#art)"/>
-      <circle cx="362" cy="177" r="22" fill="#ffe0bd"/>
-      <path d="M277 224c29-30 54-37 80-21 16 10 29 11 47-4v60H277Z" fill="#585497"/>
-      <path d="M277 251c36-36 73-17 127-35v43H277Z" fill="#302b62"/>
-      <path d="M292 250c37-22 63-8 101-23" fill="none" stroke="#c1a9ec" stroke-opacity=".5" stroke-width="2"/>
-    </g>
+      <g id="album-art" clip-path="url(#cover)">
+        <svg x="49" y="139" width="173" height="173" viewBox="282 141 118 118">
+          <rect x="282" y="141" width="118" height="118" fill="url(#art)"/>
+          <circle cx="362" cy="177" r="22" fill="#ffe0bd"/>
+          <path d="M277 224c29-30 54-37 80-21 16 10 29 11 47-4v60H277Z" fill="#585497"/>
+          <path d="M277 251c36-36 73-17 127-35v43H277Z" fill="#302b62"/>
+          <path d="M292 250c37-22 63-8 101-23" fill="none" stroke="#c1a9ec" stroke-opacity=".5" stroke-width="2"/>
+        </svg>
+      </g>
+      <g id="media-source-icon" transform="translate(205 281)">
+        <rect width="41" height="41" rx="10" fill="#989c9e"/>
+        <rect x="1.5" y="1.5" width="38" height="38" rx="8.5" fill="none" stroke="#e2e5e6" stroke-opacity=".65" stroke-width="2.5"/>
+        <g fill="none" stroke="#d9dddd" stroke-opacity=".5" stroke-width=".85">
+          <circle cx="20.5" cy="20.5" r="13"/>
+          <ellipse cx="20.5" cy="20.5" rx="6.5" ry="13"/>
+          <path d="M8 20.5h25M20.5 7.5v26m-10-20h20m-20 14h20"/>
+        </g>
+      </g>
 
-    <g fill="#f6f1fc">
-      <rect x="420" y="153" width="130" height="12" rx="6"/>
-      <rect x="420" y="177" width="83" height="7" rx="3.5" fill="#8f879b"/>
-      <rect x="420" y="205" width="187" height="5" rx="2.5" fill="#373140"/>
-      <rect x="420" y="205" width="104" height="5" rx="2.5" fill="#c4a7fa"/>
-      <circle cx="524" cy="207.5" r="5" fill="#e2ceff"/>
-      <path d="M464 233l-11 7 11 7Zm-13 0h2v14h-2Zm113 0 11 7-11 7Zm11 0h2v14h-2Z" fill="#c9bfd5"/>
-      <circle cx="514" cy="240" r="17" fill="#26222e"/>
-      <rect x="508" y="232" width="4.5" height="16" rx="1.4"/>
-      <rect x="516" y="232" width="4.5" height="16" rx="1.4"/>
-    </g>
+      <g id="player" fill="#d9d9d9">
+        <rect x="288" y="230" width="410" height="10" rx="5" fill="#2e2e2e"/>
+        <g fill="#9b9b9b" font-size="20" font-weight="600">
+          <text x="288" y="272">0:00</text>
+          <text x="697" y="272" text-anchor="end">0:00</text>
+        </g>
+        <path d="M321 324v-16q0-2 2-2h22q2 0 2 2v16Z" fill="#353535" stroke="#d9d9d9" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M317 325h34" fill="none" stroke="#d9d9d9" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="m388 315 15-8q2-1 2 1v7l15-8q2-1 2 1v16q0 2-2 1l-15-8v7q0 2-2 1l-15-8q-2-1 0-2Z"/>
+        <path d="M472 298q0-5 5-3l31 18q4 3 0 5l-31 18q-5 3-5-3Z"/>
+        <path d="m554 308q0-2 2-1l15 8v-7q0-2 2-1l15 8q2 1 0 2l-15 8q-2 1-2-1v-7l-15 8q-2 1-2-1Z"/>
+        <path d="M642 309c-5-7-12-2-12 3 0 6 8 12 12 15 4-3 11-9 11-15 0-5-6-10-11-3Z" fill="none" stroke="#292929" stroke-width="2"/>
+      </g>
 
-    <path d="M644 136v134" stroke="#312c38" stroke-width="2"/>
-    <g fill="#c9bfd5">
-      <rect x="681" y="143" width="94" height="9" rx="4.5"/>
-      <path d="m855 142-5 5 5 5m33-10 5 5-5 5" fill="none" stroke="#c9bfd5" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-      <path d="M688 178h202" stroke="#3d3548" stroke-width="2"/>
-      <circle cx="692" cy="178" r="3.5"/>
-      <circle cx="725" cy="178" r="3.5"/>
-      <circle cx="758" cy="178" r="3.5"/>
-      <circle cx="791" cy="178" r="3.5"/>
-      <circle cx="824" cy="178" r="3.5"/>
-      <circle cx="857" cy="178" r="3.5"/>
-      <circle cx="890" cy="178" r="3.5"/>
-      <path d="M692 207h198m-198 25h198m-198 25h198" fill="none" stroke="#b5a7c4" stroke-dasharray="1 32" stroke-linecap="round" stroke-width="7"/>
-      <circle cx="791" cy="232" r="11" fill="#bb9aee"/>
-      <circle cx="791" cy="232" r="3" fill="#292036"/>
+      <g id="calendar" fill="#a8a8a8">
+        <text x="736" y="116" fill="#fff" font-size="30" font-weight="700">Nov</text>
+        <text x="805" y="116" font-size="30">2026</text>
+        <path d="m748 175-7 7 7 7m389-14 7 7-7 7" fill="none" stroke="#a8a8a8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="969" y="135" width="51" height="94" rx="16" fill="#0a223e"/>
+        <circle cx="994" cy="201" r="20" fill="#007aff"/>
+        <g text-anchor="middle" font-size="20" font-weight="500">
+          <text x="790" y="163">Пн</text>
+          <text x="841" y="163">Вт</text>
+          <text x="892" y="163">Ср</text>
+          <text x="943" y="163">Чт</text>
+          <text x="994" y="163" fill="#fff">Пт</text>
+          <text x="1045" y="163">Сб</text>
+          <text x="1096" y="163">Вс</text>
+        </g>
+        <g text-anchor="middle" font-size="26" font-weight="600">
+          <text x="790" y="211">09</text>
+          <text x="841" y="211">10</text>
+          <text x="892" y="211">11</text>
+          <text x="943" y="211">12</text>
+          <text x="994" y="211" fill="#fff">13</text>
+          <text x="1045" y="211">14</text>
+          <text x="1096" y="211">15</text>
+        </g>
+        <g transform="translate(922 242)">
+          <rect x="2" y="2" width="39" height="37" rx="5.5" fill="none" stroke="#a8a8a8" stroke-width="4"/>
+          <path d="M2 7q0-5 5-5h29q5 0 5 5v3H2Z"/>
+          <path d="M10 17h23m-23 7h17m-17 7h12" fill="none" stroke="#a8a8a8" stroke-width="3" stroke-dasharray="3 4"/>
+          <circle cx="41" cy="33" r="12.5" stroke="#000" stroke-width="3"/>
+          <path d="m36 33 3.5 4 6.5-7.5" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <text x="943" y="315" fill="#fff" font-size="22" font-weight="600" text-anchor="middle">No events today</text>
+        <text x="943" y="344" font-size="20" font-weight="500" text-anchor="middle">Enjoy your free time!</text>
+      </g>
     </g>
   </g>
   <rect x=".5" y=".5" width="1199" height="401" rx="23.5" fill="none" stroke="#b4a4d0" stroke-opacity=".45"/>
