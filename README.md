@@ -1,66 +1,52 @@
 <p align="center">
-  <img src="assets/readme/hero.svg" alt="Notch Two: a music player, file shelf, and focus timer arranged around a MacBook notch" width="100%">
+  <a href="README.ru.md">Читать по-русски</a>
 </p>
 
 <p align="center">
-  <strong>An independent macOS fork that turns the notch into a small, useful workspace.</strong><br>
-  Built on <a href="https://github.com/TheBoredTeam/boring.notch">Boring Notch</a> and released separately as Notch Two.
+  <img src="assets/readme/hero.svg" alt="Illustration of the expanded Notch Two panel, with a music player and calendar inside the MacBook notch" width="100%">
 </p>
 
-<p align="center">
-  <a href="https://github.com/kkonstantin08/notch-two/releases/tag/v0.1.0-preview.4"><img alt="Latest preview" src="https://img.shields.io/github/v/release/kkonstantin08/notch-two?include_prereleases&label=preview"></a>
-  <img alt="macOS 15.6+" src="https://img.shields.io/badge/macOS-15.6%2B-111111?logo=apple&logoColor=white">
-  <img alt="Apple Silicon" src="https://img.shields.io/badge/Apple%20Silicon-arm64-111111?logo=apple&logoColor=white">
-  <a href="LICENSE"><img alt="GPL-3.0 license" src="https://img.shields.io/badge/license-GPL--3.0-blue.svg"></a>
-</p>
+# Notch Two
 
-## What it does
+Notch Two puts music, your calendar, and a drag-and-drop file shelf in the MacBook notch. Hover over the notch to open the panel.
 
-Notch Two keeps everyday controls close to the top edge of your Mac. Hover over the notch to open its panel; music, calendar events, a drag-and-drop shelf, focus timers, wellness reminders, notifications, and system controls live together there.
+**[Download for Apple Silicon](https://github.com/kkonstantin08/notch-two/releases/download/v0.1.0-preview.4/Notch-Two-2.8-beta.0-build.275-arm64.zip)** · [Release notes and SHA-256](https://github.com/kkonstantin08/notch-two/releases/tag/v0.1.0-preview.4)
 
-Custom Features → System includes an optional Network HUD for Wi-Fi and
-route changes. Wi-Fi names require Location permission. Unidentified
-hotspots are shown as Wi-Fi. See the [Network HUD specification](docs/superpowers/specs/2026-11-13-network-hud.md).
+## What you can do
 
-The upstream Boring Notch project remains separate. Notch Two uses its own app identity and data container, and does not replace or update the official app.
+- **Music and calendar.** Control playback and check upcoming events from the notch.
+- **File shelf.** Drop files onto the shelf and drag them out when you need them.
+- **Notifications.** Show macOS notifications in the notch. A Telegram card can open its original chat while the notification action is available.
+- **Timers and network.** Enable Pomodoro, wellness reminders, or the network indicator in **Settings → Custom Features**. The network indicator shows Wi-Fi changes and when the system network route drops or returns. Showing the Wi-Fi name requires Location permission.
+
+Choose English, Russian, German, Spanish, French, or the macOS default in **Settings → General → Language**. Restart Notch Two to apply the change.
 
 ## Get the preview
 
-**Notch Two `v0.1.0-preview.4`** is an arm64 preview built from app version `2.8-beta.0` (build `275`).
+The current preview is **v0.1.0-preview.4** (app version `2.8-beta.0`, build `275`). It requires an Apple Silicon Mac running macOS 15.6 or later.
 
-1. Download [Notch-Two-2.8-beta.0-build.275-arm64.zip](https://github.com/kkonstantin08/notch-two/releases/download/v0.1.0-preview.4/Notch-Two-2.8-beta.0-build.275-arm64.zip) and expand it.
-2. Move **Notch Two.app** to **Applications**.
-3. This preview is ad-hoc signed and is not notarized by Apple. To clear the quarantine flag before opening it, run:
+1. Download and expand the ZIP above.
+2. Move **Notch Two.app** to **Applications**, then open it.
+3. If macOS blocks the preview, verify its SHA-256 against the release and clear the quarantine flag before opening it again. The app is ad-hoc signed and has no Apple notarization.
 
    ```sh
    xattr -dr com.apple.quarantine "/Applications/Notch Two.app"
    ```
 
-   Then open Notch Two from Applications. macOS may ask you to grant permissions for features you enable.
-
-> This is an early, unsigned-by-Developer-ID preview. It is for testing; macOS may show security prompts. The app is arm64-only and requires macOS 15.6 or later.
-
 ## Build from source
 
-Requirements: macOS 15.6 or later and Xcode 26 or later.
+Use an Apple Silicon Mac with macOS 15.6 or later and Xcode 26 or later.
 
 ```sh
 git clone https://github.com/kkonstantin08/notch-two.git
 cd notch-two
 ./scripts/test.sh
 ./scripts/build.sh
-```
-
-The verified Release app is written to `.build/xcode/Build/Products/Release/Notch Two.app`. Open it with:
-
-```sh
 open ".build/xcode/Build/Products/Release/Notch Two.app"
 ```
 
-The local build uses an ad-hoc signature. It has a separate bundle identifier and XPC helper from the official Boring Notch app; keep only one notch app running at a time.
-
 ## Upstream and license
 
-Notch Two is based on [TheBoredTeam/boring.notch](https://github.com/TheBoredTeam/boring.notch), pinned at [`0477a9b`](https://github.com/TheBoredTeam/boring.notch/tree/0477a9be8c8f4c426749f8fd2d5334e04851067a). The source and adapted changes are distributed under **GNU GPL-3.0**. See [LICENSE](LICENSE) and [THIRD_PARTY_LICENSES](THIRD_PARTY_LICENSES) for the complete terms and dependency notices.
+Notch Two is an independent fork of [Boring Notch](https://github.com/TheBoredTeam/boring.notch), based on [`0477a9b`](https://github.com/TheBoredTeam/boring.notch/tree/0477a9be8c8f4c426749f8fd2d5334e04851067a). It has its own bundle identifier, XPC helper, and data container. Run one notch app at a time.
 
-Notch Two is an independent community fork and is not affiliated with or endorsed by TheBoredTeam. Upstream attribution, trademarks, and third-party notices remain with their respective owners.
+Distributed under [GPL-3.0](LICENSE). See [third-party licenses](THIRD_PARTY_LICENSES) and the [upstream change history](UPSTREAM.md).

@@ -1,51 +1,106 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="402" viewBox="0 0 1200 402" role="img" aria-labelledby="title description">
   <title id="title">Notch Two</title>
-  <desc id="desc">A focused Mac workspace set around a black notch, with music, calendar, a file shelf, and a focus timer.</desc>
-  <rect width="1200" height="360" rx="28" fill="#101113"/>
-  <path d="M0 92h1200M0 286h1200" stroke="#25272a" stroke-width="1"/>
-  <text x="64" y="67" fill="#8d9299" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" letter-spacing="2">A SMALL WORKSPACE ABOVE YOUR SCREEN</text>
-  <text x="62" y="158" fill="#f4f5f6" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="62" font-weight="700" letter-spacing="-2">Notch Two</text>
-  <text x="65" y="201" fill="#b5bac1" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="24">Music, files, calendar and focus.</text>
-  <text x="65" y="238" fill="#b5bac1" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="24">Right where you already look.</text>
-  <text x="65" y="326" fill="#737982" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18">INDEPENDENT macOS FORK  ·  APPLE SILICON</text>
+  <desc id="description">An illustration of the open MacBook notch panel, with music controls and a calendar inside.</desc>
+  <defs>
+    <clipPath id="frame">
+      <rect width="1200" height="402" rx="24"/>
+    </clipPath>
+    <clipPath id="cover">
+      <rect x="282" y="141" width="118" height="118" rx="17"/>
+    </clipPath>
+    <linearGradient id="desktop" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#262d59"/>
+      <stop offset=".53" stop-color="#413975"/>
+      <stop offset="1" stop-color="#785a91"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#493d7d"/>
+      <stop offset=".62" stop-color="#5d5096"/>
+      <stop offset="1" stop-color="#37376c"/>
+    </linearGradient>
+    <linearGradient id="ridge" x1="0" y1="1" x2="1" y2="0" gradientUnits="objectBoundingBox">
+      <stop stop-color="#2c335f"/>
+      <stop offset=".58" stop-color="#4b437e"/>
+      <stop offset="1" stop-color="#9876a2"/>
+    </linearGradient>
+    <linearGradient id="art" x1="0" y1="1" x2="1" y2="0" gradientUnits="objectBoundingBox">
+      <stop stop-color="#282b63"/>
+      <stop offset=".5" stop-color="#8068b6"/>
+      <stop offset="1" stop-color="#f9b8a4"/>
+    </linearGradient>
+    <linearGradient id="shadow" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#121222" stop-opacity=".5"/>
+      <stop offset="1" stop-color="#121222" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
 
-  <rect x="698" y="35" width="438" height="286" rx="24" fill="#181a1e" stroke="#34373c" stroke-width="2"/>
-  <path d="M698 92h438" stroke="#34373c" stroke-width="1"/>
-  <path d="M824 35v18c0 35 17 51 50 51h86c33 0 50-16 50-51V35" fill="#050506"/>
-  <rect x="864" y="75" width="52" height="5" rx="2.5" fill="#4e8cff"/>
-  <circle cx="938" cy="77.5" r="3" fill="#383b40"/>
+  <g clip-path="url(#frame)">
+    <rect width="1200" height="402" fill="url(#desktop)"/>
+    <path d="M0 282C146 188 273 242 458 322C652 405 799 337 969 222C1054 165 1123 133 1200 127V402H0Z" fill="url(#fold)"/>
+    <path d="M0 346C177 382 317 363 508 291C681 226 792 240 943 307C1052 355 1131 339 1200 292V402H0Z" fill="url(#ridge)"/>
+    <path d="M0 346C177 382 317 363 508 291C681 226 792 240 943 307C1052 355 1131 339 1200 292" fill="none" stroke="#b49bc9" stroke-opacity=".34" stroke-width="2"/>
 
-  <g transform="translate(730 122)">
-    <rect width="194" height="82" rx="16" fill="#22252a"/>
-    <circle cx="37" cy="41" r="22" fill="#34383f"/>
-    <path d="M32 28v21c0 6 8 6 8 1V34l11-3v14c0 6 8 6 8 1V24z" fill="#f1f2f4"/>
-    <text x="72" y="36" fill="#f1f2f4" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="17" font-weight="600">Now playing</text>
-    <path d="M72 55h91" stroke="#6d737c" stroke-width="4" stroke-linecap="round"/>
-    <path d="M72 55h42" stroke="#4e8cff" stroke-width="4" stroke-linecap="round"/>
+    <rect width="1200" height="57" fill="#111425" fill-opacity=".4"/>
+    <path d="M0 57h1200" stroke="#d6c9ef" stroke-opacity=".21"/>
+    <g fill="none" stroke="#f2ecfb" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" opacity=".86">
+      <path d="M1053 25a15 15 0 0 1 20 0m-16 5a9 9 0 0 1 12 0m-9 5a4 4 0 0 1 6 0"/>
+      <rect x="1087" y="22" width="24" height="15" rx="3"/>
+      <path d="M1114 27v5M1130 25h23m-23 10h23"/>
+      <circle cx="1137" cy="25" r="3.4" fill="#f2ecfb"/>
+      <circle cx="1147" cy="35" r="3.4" fill="#f2ecfb"/>
+    </g>
+
+    <path d="M238 259h724v22c0 34-20 57-51 57H289c-31 0-51-23-51-57Z" fill="url(#shadow)"/>
+    <path d="M218 55q20 0 20 20v201c0 27 19 46 46 46h632c27 0 46-19 46-46V75q0-20 20-20" fill="none" stroke="#cbc1e0" stroke-opacity=".27" stroke-width="2"/>
+    <path d="M451 0h298v31q0 24 24 24h209q-20 0-20 20v201c0 27-19 46-46 46H284c-27 0-46-19-46-46V75q0-20-20-20h209q24 0 24-24Z" fill="#09090d"/>
+    <circle cx="600" cy="27" r="5" fill="#1d2030" stroke="#303449"/>
+    <circle cx="601.4" cy="25.7" r="1.4" fill="#6e7ca9"/>
+
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
+      <rect x="282" y="77" width="52" height="36" rx="12" fill="#292633"/>
+      <path d="m299 96 9-8 9 8v7h-18Z" stroke="#f3e9fc"/>
+      <path d="M354 89h24l-3 14h-18Zm1 6h7l2 3h4l2-3h7" stroke="#a39caf"/>
+      <path d="M407 90h19m-19 12h19" stroke="#a39caf"/>
+      <circle cx="413" cy="90" r="3" fill="#09090d" stroke="#a39caf"/>
+      <circle cx="420" cy="102" r="3" fill="#09090d" stroke="#a39caf"/>
+    </g>
+
+    <g clip-path="url(#cover)">
+      <rect x="282" y="141" width="118" height="118" fill="url(#art)"/>
+      <circle cx="362" cy="177" r="22" fill="#ffe0bd"/>
+      <path d="M277 224c29-30 54-37 80-21 16 10 29 11 47-4v60H277Z" fill="#585497"/>
+      <path d="M277 251c36-36 73-17 127-35v43H277Z" fill="#302b62"/>
+      <path d="M292 250c37-22 63-8 101-23" fill="none" stroke="#c1a9ec" stroke-opacity=".5" stroke-width="2"/>
+    </g>
+
+    <g fill="#f6f1fc">
+      <rect x="420" y="153" width="130" height="12" rx="6"/>
+      <rect x="420" y="177" width="83" height="7" rx="3.5" fill="#8f879b"/>
+      <rect x="420" y="205" width="187" height="5" rx="2.5" fill="#373140"/>
+      <rect x="420" y="205" width="104" height="5" rx="2.5" fill="#c4a7fa"/>
+      <circle cx="524" cy="207.5" r="5" fill="#e2ceff"/>
+      <path d="M464 233l-11 7 11 7Zm-13 0h2v14h-2Zm113 0 11 7-11 7Zm11 0h2v14h-2Z" fill="#c9bfd5"/>
+      <circle cx="514" cy="240" r="17" fill="#26222e"/>
+      <rect x="508" y="232" width="4.5" height="16" rx="1.4"/>
+      <rect x="516" y="232" width="4.5" height="16" rx="1.4"/>
+    </g>
+
+    <path d="M644 136v134" stroke="#312c38" stroke-width="2"/>
+    <g fill="#c9bfd5">
+      <rect x="681" y="143" width="94" height="9" rx="4.5"/>
+      <path d="m855 142-5 5 5 5m33-10 5 5-5 5" fill="none" stroke="#c9bfd5" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+      <path d="M688 178h202" stroke="#3d3548" stroke-width="2"/>
+      <circle cx="692" cy="178" r="3.5"/>
+      <circle cx="725" cy="178" r="3.5"/>
+      <circle cx="758" cy="178" r="3.5"/>
+      <circle cx="791" cy="178" r="3.5"/>
+      <circle cx="824" cy="178" r="3.5"/>
+      <circle cx="857" cy="178" r="3.5"/>
+      <circle cx="890" cy="178" r="3.5"/>
+      <path d="M692 207h198m-198 25h198m-198 25h198" fill="none" stroke="#b5a7c4" stroke-dasharray="1 32" stroke-linecap="round" stroke-width="7"/>
+      <circle cx="791" cy="232" r="11" fill="#bb9aee"/>
+      <circle cx="791" cy="232" r="3" fill="#292036"/>
+    </g>
   </g>
-
-  <g transform="translate(940 122)">
-    <rect width="164" height="82" rx="16" fill="#22252a"/>
-    <rect x="16" y="16" width="35" height="42" rx="7" fill="#30343a"/>
-    <path d="M16 27h35" stroke="#fa6b6b" stroke-width="7"/>
-    <text x="22" y="47" fill="#f1f2f4" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18" font-weight="700">12</text>
-    <text x="62" y="36" fill="#f1f2f4" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="17" font-weight="600">Calendar</text>
-    <text x="62" y="57" fill="#9da3ac" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="14">Next event</text>
-  </g>
-
-  <g transform="translate(730 218)">
-    <rect width="194" height="76" rx="16" fill="#22252a"/>
-    <rect x="17" y="17" width="34" height="42" rx="6" fill="#4e8cff"/>
-    <path d="M24 26h20M24 33h16M24 40h20" stroke="#f4f5f6" stroke-width="2" stroke-linecap="round" opacity=".9"/>
-    <text x="65" y="37" fill="#f1f2f4" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="17" font-weight="600">File shelf</text>
-    <text x="65" y="58" fill="#9da3ac" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="14">Drag it anywhere</text>
-  </g>
-
-  <g transform="translate(940 218)">
-    <rect width="164" height="76" rx="16" fill="#22252a"/>
-    <circle cx="38" cy="38" r="21" fill="none" stroke="#3a3e45" stroke-width="5"/>
-    <path d="M38 17a21 21 0 0 1 20 15" fill="none" stroke="#a982ff" stroke-width="5" stroke-linecap="round"/>
-    <text x="69" y="37" fill="#f1f2f4" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="17" font-weight="600">Focus</text>
-    <text x="69" y="58" fill="#9da3ac" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="14">Pomodoro</text>
-  </g>
+  <rect x=".5" y=".5" width="1199" height="401" rx="23.5" fill="none" stroke="#b4a4d0" stroke-opacity=".45"/>
 </svg>
