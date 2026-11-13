@@ -55,7 +55,9 @@ struct MediaSettingsView: View {
                 Toggle("Show sneak peek on playback changes", isOn: $enableSneakPeek)
                 if enableSneakPeek {
                     Stepper("Sneak Peek duration · \(Int(peekDuration)) s", value: $peekDuration, in: 1...15)
-                    Defaults.Toggle("Always show sneak peek", key: .alwaysShowSneakPeek)
+                    Defaults.Toggle(key: .alwaysShowSneakPeek) {
+                        Text("Always show sneak peek")
+                    }
                 }
                 Picker("Sneak Peek Style", selection: $sneakPeekStyles) {
                     ForEach(SneakPeekStyle.allCases) { style in

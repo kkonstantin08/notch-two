@@ -357,7 +357,7 @@ struct NotificationCardContent<Actions: View>: View {
         sourceButton {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 7) {
-                    Text(notification.appName ?? "Notification")
+                    Text(notification.appName ?? String(localized: "Notification"))
                         .font(.system(size: 14, weight: .semibold))
                         .lineLimit(1)
                     Text(notification.receivedAt, style: .relative)
@@ -384,7 +384,7 @@ struct NotificationCardContent<Actions: View>: View {
         }
         .accessibilityHint(notification.isTelegram
             ? Text("Opens the chat from this notification")
-            : Text("Opens \(notification.appName ?? "the app")"))
+            : Text("Opens \(notification.appName ?? String(localized: "the app"))"))
     }
 
     private func sourceButton<Label: View>(@ViewBuilder label: () -> Label) -> some View {

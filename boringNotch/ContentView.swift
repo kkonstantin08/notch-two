@@ -120,7 +120,7 @@ struct ContentView: View {
             items.append(.custom(.init(id: notice.id, title: notice.title, detail: notice.detail, icon: notice.icon)))
         }
         if custom.capsLock {
-            items.append(.custom(.init(id: "capsLock", title: "Caps Lock", detail: "On", icon: "capslock.fill")))
+            items.append(.custom(.init(id: "capsLock", title: "Caps Lock", detail: String(localized: "On"), icon: "capslock.fill")))
         }
         if let event = custom.eventActivity { items.append(.custom(event)) }
         if let timer = custom.pomodoroActivity { items.append(.custom(timer)) }

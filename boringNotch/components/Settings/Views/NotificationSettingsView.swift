@@ -79,7 +79,9 @@ struct NotificationSettingsView: View {
             }
 
             Section("Display") {
-                Defaults.Toggle("Expand notch on new notification", key: .notificationAutoExpand)
+                Defaults.Toggle(key: .notificationAutoExpand) {
+                    Text("Expand notch on new notification")
+                }
                 Picker("Notification layout", selection: $cardLayout) {
                     Text("Single column").tag(NotificationCardLayout.column)
                     Text("On one line").tag(NotificationCardLayout.inline)
@@ -94,7 +96,9 @@ struct NotificationSettingsView: View {
             .disabled(!notificationLiveActivity)
 
             Section {
-                Defaults.Toggle("Reply to Telegram notifications", key: .telegramNotificationReplies)
+                Defaults.Toggle(key: .telegramNotificationReplies) {
+                    Text("Reply to Telegram notifications")
+                }
             }
             .disabled(!notificationLiveActivity)
 

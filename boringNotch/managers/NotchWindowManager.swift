@@ -145,6 +145,7 @@ final class NotchWindowManager {
         window.contentView = NSHostingView(
             rootView: ContentView()
                 .environmentObject(viewModel)
+                .environment(\.locale, AppLanguage.interfaceLocale)
         )
 
         window.orderFrontRegardless()

@@ -1,0 +1,125 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSLocationUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch Two uses Location access only to read the current Wi-Fi name when you enable it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch Two использует доступ к геопозиции только для получения имени сети Wi‑Fi, если вы включили его показ."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch Two uses Location access only to read the current Wi-Fi name when you enable it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch Two использует доступ к геопозиции только для получения имени сети Wi‑Fi, если вы включили его показ."
+          }
+        }
+      }
+    },
+    "NSBluetoothAlwaysUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Bluetooth audio connections and available headphone battery levels when enabled."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch Two показывает подключения аудиоустройств Bluetooth и доступные сведения о заряде наушников, если эти функции включены."
+          }
+        }
+      }
+    },
+    "NSCalendarsFullAccessUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show calendar events and enabled event alerts in the notch."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch Two показывает события календаря и уведомления о них, если эти функции включены."
+          }
+        }
+      }
+    },
+    "NSAudioCaptureUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch Two analyzes audio from your music app to draw a real-time waveform in the notch. Audio is processed locally and never leaves your Mac."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch Two анализирует звук музыкального приложения для отображения звуковой волны. Звук обрабатывается на вашем Mac."
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This app uses the camera to display a live camera view"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch Two использует камеру для показа изображения в реальном времени."
+          }
+        }
+      }
+    },
+    "NSRemindersUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This app uses Reminders to display your scheduled reminder in the calendar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notch Two показывает запланированные напоминания в календаре."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

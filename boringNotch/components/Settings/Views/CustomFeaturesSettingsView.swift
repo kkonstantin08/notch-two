@@ -111,7 +111,7 @@ struct CustomFeaturesSettingsView: View {
 
 private struct DurationField: View {
     private let title: LocalizedStringKey
-    private let unit: UnitDuration
+    private let unitLabel: String
     private let range: ClosedRange<Int>
     private let step: Int
     @Binding private var value: Int
@@ -121,7 +121,7 @@ private struct DurationField: View {
     init(_ title: LocalizedStringKey, value: Binding<Int>, unit: UnitDuration = .minutes,
          range: ClosedRange<Int> = 1...180, step: Int = 1) {
         self.title = title
-        self.unit = unit
+        self.unitLabel = unit == .seconds ? String(localized: "sec") : String(localized: "min")
         self.range = range
         self.step = step
         _value = value
@@ -143,8 +143,8 @@ private struct DurationField: View {
                         draft = String(value)
                         editing = false
                     }
-                    .accessibilityHint(Text("Enter a whole number from \(range.lowerBound) to \(range.upperBound) \(unit.symbol)"))
-                Text(unit.symbol)
+                    .accessibilityHint(Text("Enter a whole number from \(range.lowerBound) to \(range.upperBound) \(unitLabel)"))
+                Text(unitLabel)
                     .foregroundStyle(.secondary)
                 Stepper(value: Binding(get: { validDraft ?? value }, set: { update($0) }), in: range, step: step) {
                     Text(title)

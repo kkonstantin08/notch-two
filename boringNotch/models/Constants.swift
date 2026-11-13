@@ -39,13 +39,11 @@ struct AppLanguage: RawRepresentable, Hashable, Identifiable, Defaults.Serializa
         self.rawValue = rawValue
     }
 
-    static var allCases: [AppLanguage] {
-        let languages = Bundle.main.localizations
-            .filter(isSelectableLocalization)
-            .map(AppLanguage.init(rawValue:))
-            .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
+    static let allCases = ["system", "en", "ru", "de", "es", "fr"].map(AppLanguage.init(rawValue:))
 
-        return [.system] + languages
+    var supportedChoice: AppLanguage {
+        if rawValue == "en-GB" { return AppLanguage(rawValue: "en") }
+        return Self.allCases.contains(self) ? self : .system
     }
 
     var displayName: String {
@@ -64,30 +62,11 @@ struct AppLanguage: RawRepresentable, Hashable, Identifiable, Defaults.Serializa
         Locale(identifier: rawValue)
     }
 
-    private static func isSelectableLocalization(_ identifier: String) -> Bool {
-        guard identifier != "Base" else { return false }
-        guard let url = Bundle.main.url(
-            forResource: "Localizable",
-            withExtension: "strings",
-            subdirectory: nil,
-            localization: identifier
-        ) else {
-            return false
-        }
-
-        guard
-            let data = try? Data(contentsOf: url),
-            let strings = try? PropertyListSerialization.propertyList(
-                from: data,
-                options: [],
-                format: nil
-            ) as? [String: String]
-        else {
-            return false
-        }
-
-        return strings.values.contains { !$0.isEmpty }
-    }
+    static let interfaceLocale: Locale = {
+        guard let language = Bundle.main.preferredLocalizations.first else { return .current }
+        let localized = Locale(identifier: language)
+        return localized.language.languageCode == Locale.current.language.languageCode ? .current : localized
+    }()
 
     func applyAppleLanguagesOverride() {
         if self == .system {

@@ -123,6 +123,7 @@ struct CustomMonthPicker: View {
     private let manager = CalendarManager.shared
     private var calendar: Calendar {
         var calendar = Calendar.current
+        calendar.locale = AppLanguage.interfaceLocale
         calendar.firstWeekday = weekStartDay.firstWeekday
         return calendar
     }
@@ -132,7 +133,7 @@ struct CustomMonthPicker: View {
             HStack {
                 stepButton("Previous year", symbol: "chevron.left.2", component: .year, amount: -1)
                 stepButton("Previous month", symbol: "chevron.left", component: .month, amount: -1)
-                Text(month.formatted(.dateTime.month(.wide).year()))
+                Text(month, format: .dateTime.month(.wide).year())
                     .font(.headline)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -153,7 +154,7 @@ struct CustomMonthPicker: View {
                             choose(day)
                             dismiss()
                         } label: {
-                            Text(day.formatted(.dateTime.day()))
+                            Text(day, format: .dateTime.day())
                                 .frame(maxWidth: .infinity, minHeight: 26)
                                 .overlay(alignment: .bottom) {
                                     if eventDays.contains(day) {
@@ -167,7 +168,7 @@ struct CustomMonthPicker: View {
                                             Color.effectiveAccentBackground : .clear, in: RoundedRectangle(cornerRadius: 5))
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel(day.formatted(date: .complete, time: .omitted))
+                        .accessibilityLabel(day.formatted(.dateTime.weekday(.wide).day().month(.wide).year().locale(AppLanguage.interfaceLocale)))
                         .accessibilityHint(eventDays.contains(day) ? "Has calendar items" : "")
                     } else {
                         Color.clear.frame(height: 26)

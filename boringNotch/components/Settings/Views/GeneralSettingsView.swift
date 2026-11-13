@@ -22,6 +22,18 @@ struct GeneralSettings: View {
 
     var body: some View {
         Form {
+            Section("Language") {
+                Picker("App language", selection: $appLanguage) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.displayName).tag(language)
+                    }
+                }
+                .onChange(of: appLanguage) {
+                    appLanguage.applyAppleLanguagesOverride()
+                    showLanguageRestartAlert = true
+                }
+            }
+
             Section {
                 Toggle(isOn: Binding(
                     get: { Defaults[.menubarIcon] },
@@ -32,15 +44,6 @@ struct GeneralSettings: View {
                 .tint(.effectiveAccent)
                 LaunchAtLogin.Toggle {
                     Text("Launch at login")
-                }
-                Picker("Language", selection: $appLanguage) {
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language.displayName).tag(language)
-                    }
-                }
-                .onChange(of: appLanguage) {
-                    appLanguage.applyAppleLanguagesOverride()
-                    showLanguageRestartAlert = true
                 }
             } header: {
                 Text("App")
@@ -83,7 +86,7 @@ struct GeneralSettings: View {
                 ApplicationRelauncher.restart()
             }
         } message: {
-            Text("Changing the app language requires restarting Boring Notch.")
+            Text("Restart Notch Two to apply the language to the notch and Settings.")
         }
     }
 }

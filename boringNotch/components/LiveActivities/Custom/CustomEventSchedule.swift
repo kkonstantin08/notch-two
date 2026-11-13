@@ -83,7 +83,7 @@ final class CustomEventSchedule {
         let countdownEnabled = CustomFeature.eventCountdown.isEnabled
         if countdownEnabled, let active, let event = events.first(where: { $0.id == active.id }),
            options.showTitle || options.showCountdown {
-            publish?(.init(id: "event", title: options.showTitle ? event.title : "Calendar",
+            publish?(.init(id: "event", title: options.showTitle ? event.title : String(localized: "Calendar"),
                            detail: "", icon: "calendar", deadline: options.showCountdown ? event.end : nil))
         } else {
             publish?(nil)
@@ -98,7 +98,7 @@ final class CustomEventSchedule {
                     event.start.addingTimeInterval(-60 * Double(max(1, min(options.leadMinutes, 60))))
                 ]
                 for date in dates where date <= event.start {
-                    let detail = ([event.start.formatted(date: .omitted, time: .shortened)] +
+                    let detail = ([event.start.formatted(.dateTime.hour().minute().locale(AppLanguage.interfaceLocale))] +
                                   [event.location].compactMap { $0 }).joined(separator: " · ")
                     schedule(event, at: date, now: now, next: &next, validKeys: &validKeys, source: .eventAlerts,
                              detail: detail, sound: options.sound)
@@ -108,7 +108,7 @@ final class CustomEventSchedule {
                 let warning = max(event.start, event.end.addingTimeInterval(-60 * Double(options.endWarningMinutes)))
                 if active?.id == event.id || event.start > now {
                     schedule(event, at: warning, now: now, next: &next, validKeys: &validKeys,
-                             source: .eventCountdown, detail: "Ends at \(event.end.formatted(date: .omitted, time: .shortened))",
+                             source: .eventCountdown, detail: String(localized: "Ends at \(event.end.formatted(.dateTime.hour().minute().locale(AppLanguage.interfaceLocale)))"),
                              sound: options.sound)
                 }
             }

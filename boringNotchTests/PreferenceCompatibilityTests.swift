@@ -43,6 +43,33 @@ final class PreferenceCompatibilityTests: XCTestCase {
         }
     }
 
+    func testLanguagePickerMatchesPackagedLanguages() {
+        let options = AppLanguage.allCases.map(\.rawValue)
+        XCTAssertEqual(options, ["system", "en", "ru", "de", "es", "fr"])
+        XCTAssertEqual(Set(Bundle.main.localizations).subtracting(["Base"]), Set(options.dropFirst()))
+    }
+
+    func testPreviousLanguageSelectionsResolveToSupportedOptions() {
+        XCTAssertEqual(AppLanguage(rawValue: "en-GB").supportedChoice.rawValue, "en")
+        XCTAssertEqual(AppLanguage(rawValue: "ja").supportedChoice, .system)
+        XCTAssertEqual(AppLanguage(rawValue: "it").supportedChoice, .system)
+        XCTAssertEqual(AppLanguage(rawValue: "ru").supportedChoice.rawValue, "ru")
+    }
+
+    func testBuiltAppHasBothLanguageResources() throws {
+        for (language, languageLabel, customFeatures) in [
+            ("en", "App language", "Custom Features"),
+            ("ru", "Язык приложения", "Дополнительные функции")
+        ] {
+            let path = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj"))
+            let resources = try XCTUnwrap(Bundle(path: path))
+            XCTAssertEqual(resources.localizedString(forKey: "App language", value: nil, table: nil), languageLabel)
+            XCTAssertEqual(resources.localizedString(forKey: "Custom Features", value: nil, table: nil), customFeatures)
+            let permission = resources.localizedString(forKey: "NSLocationUsageDescription", value: nil, table: "InfoPlist")
+            XCTAssertTrue(permission.contains(language == "en" ? "Location access" : "геопозиции"))
+        }
+    }
+
     func testMediaControllerEncodings() throws {
         try checkEncodings([
             ("Now Playing", "nowPlaying", MediaControllerType.nowPlaying),

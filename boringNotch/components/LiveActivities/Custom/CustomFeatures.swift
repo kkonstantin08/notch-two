@@ -216,7 +216,8 @@ final class CustomFeatures: ObservableObject {
 
     var wellnessActivity: CustomActivity? {
         guard wellnessEnabled, wellness.isResting, let deadline = wellness.deadline else { return nil }
-        return CustomActivity(id: "wellness", title: "Eye break", detail: "Look away from the screen", icon: "eye", deadline: deadline)
+        return CustomActivity(id: "wellness", title: String(localized: "Eye break"),
+                              detail: String(localized: "Look away from the screen"), icon: "eye", deadline: deadline)
     }
 
     private func startWellness() {
@@ -380,7 +381,7 @@ final class CustomFeatures: ObservableObject {
         guard clock.finishIfDue(at: Date()) else { return }
         pomodoro = clock
         if Defaults[.customPomodoroOptions].notice {
-            enqueue(.init(source: .pomodoro, key: UUID().uuidString, title: "Pomodoro complete",
+            enqueue(.init(source: .pomodoro, key: UUID().uuidString, title: String(localized: "Pomodoro complete"),
                           detail: clock.phase.label, icon: "timer"))
         }
     }
@@ -541,9 +542,9 @@ final class CustomFeatures: ObservableObject {
 extension PomodoroClock.Phase {
     var label: String {
         switch self {
-        case .focus: "Focus"
-        case .shortBreak: "Short break"
-        case .longBreak: "Long break"
+        case .focus: String(localized: "Focus")
+        case .shortBreak: String(localized: "Short break")
+        case .longBreak: String(localized: "Long break")
         }
     }
 }

@@ -17,6 +17,12 @@ struct DynamicNotchApp: App {
     @Environment(\.openWindow) var openWindow
 
     init() {
+        let savedLanguage = Defaults[.appLanguage]
+        let language = savedLanguage.supportedChoice
+        if language != savedLanguage {
+            language.applyAppleLanguagesOverride()
+            Defaults[.appLanguage] = language
+        }
         #if DEBUG
         OTPDetector.runSelfCheck()
         #endif
@@ -381,7 +387,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         window.close()
                         SettingsWindowController.shared.showWindow()
                     }
-                ))
+                )
+                .environment(\.locale, AppLanguage.interfaceLocale))
             window.isRestorable = false
             window.identifier = NSUserInterfaceItemIdentifier("OnboardingWindow")
 

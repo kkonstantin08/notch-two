@@ -233,6 +233,7 @@ struct WheelPicker: View {
 
     private func dateToString(for date: Date) -> String {
         let formatter = DateFormatter()
+        formatter.locale = AppLanguage.interfaceLocale
         formatter.dateFormat = "E"
         return formatter.string(from: date)
     }
@@ -534,9 +535,9 @@ struct CalendarView: View {
             HStack {
                 monthLabel {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(selectedDate.formatted(.dateTime.month(.abbreviated)))
+                        Text(selectedDate, format: .dateTime.month(.abbreviated))
                             .font(.title3).fontWeight(.semibold).foregroundColor(.white)
-                        Text(selectedDate.formatted(.dateTime.year()))
+                        Text(selectedDate, format: .dateTime.year())
                             .font(.title3).fontWeight(.light).foregroundColor(Color(white: 0.65))
                     }
                 }
@@ -554,9 +555,9 @@ struct CalendarView: View {
         HStack(alignment: .center, spacing: 8) {
             monthLabel {
                 VStack(alignment: .leading) {
-                    Text(selectedDate.formatted(.dateTime.month(.abbreviated)))
+                    Text(selectedDate, format: .dateTime.month(.abbreviated))
                         .font(.title3).fontWeight(.semibold).foregroundColor(.white)
-                    Text(selectedDate.formatted(.dateTime.year()))
+                    Text(selectedDate, format: .dateTime.year())
                         .font(.title3).fontWeight(.light).foregroundColor(Color(white: 0.65))
                 }
             }

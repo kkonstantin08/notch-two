@@ -57,7 +57,7 @@ class SettingsWindowController: NSWindowController {
 
         // Create the SwiftUI content
         let settingsView = SettingsView(camera: camera)
-        let hostingView = NSHostingView(rootView: settingsView)
+        let hostingView = NSHostingView(rootView: settingsView.environment(\.locale, AppLanguage.interfaceLocale))
         window.contentView = hostingView
 
         // Handle window closing

@@ -10,7 +10,7 @@ import SwiftUI
 struct BoringLargeButtons: View {
     var action: () -> Void
     var icon: Image
-    var title: String
+    var title: LocalizedStringKey
     var body: some View {
         Button(
             action: action,

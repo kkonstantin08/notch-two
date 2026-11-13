@@ -12,11 +12,11 @@ struct CustomAccessory: Equatable, Identifiable {
     let single: Int?
 
     var levels: String {
-        let format = { (level: Int?) in level.map { "\($0)%" } ?? "Unavailable" }
+        let format = { (level: Int?) in level.map { "\($0)%" } ?? String(localized: "Unavailable") }
         if left == nil, right == nil, caseLevel == nil, single != nil {
             return format(single)
         }
-        return "L \(format(left)) · R \(format(right)) · Case \(format(caseLevel))"
+        return String(localized: "L \(format(left)) · R \(format(right)) · Case \(format(caseLevel))")
     }
 
     var primary: Int? { [left, right].compactMap { $0 }.min() ?? single }
@@ -146,8 +146,8 @@ final class CustomBluetooth: NSObject, ObservableObject, @unchecked Sendable {
 
     private func announce(_ device: CustomAccessory, connected: Bool) {
         guard let session = workerSession else { return }
-        let detail = if connected, let battery = device.primary { "Connected · \(battery)%" }
-                     else { connected ? "Connected" : "Disconnected" }
+        let detail = if connected, let battery = device.primary { String(localized: "Connected · \(battery)%") }
+                     else { connected ? String(localized: "Connected") : String(localized: "Disconnected") }
         let notice = CustomNotice(source: .bluetooth, key: "\(device.id):\(connected)", title: device.name,
                                   detail: detail, icon: device.icon)
         Task { @MainActor [weak self] in
