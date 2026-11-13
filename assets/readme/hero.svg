@@ -40,21 +40,25 @@
     <path d="M0 346C177 382 317 363 508 291C681 226 792 240 943 307C1052 355 1131 339 1200 292V402H0Z" fill="url(#ridge)"/>
     <path d="M0 346C177 382 317 363 508 291C681 226 792 240 943 307C1052 355 1131 339 1200 292" fill="none" stroke="#b49bc9" stroke-opacity=".34" stroke-width="2"/>
 
-    <rect width="1200" height="57" fill="#111425" fill-opacity=".4"/>
-    <path d="M0 57h1200" stroke="#d6c9ef" stroke-opacity=".21"/>
-    <g fill="none" stroke="#f2ecfb" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" opacity=".86">
-      <path d="M1053 25a15 15 0 0 1 20 0m-16 5a9 9 0 0 1 12 0m-9 5a4 4 0 0 1 6 0"/>
-      <rect x="1087" y="22" width="24" height="15" rx="3"/>
-      <path d="M1114 27v5M1130 25h23m-23 10h23"/>
-      <circle cx="1137" cy="25" r="3.4" fill="#f2ecfb"/>
-      <circle cx="1147" cy="35" r="3.4" fill="#f2ecfb"/>
-    </g>
+    <rect width="1200" height="57" fill="#10101b" fill-opacity=".68"/>
+    <path d="M0 57h1200" stroke="#d6c9ef" stroke-opacity=".17"/>
 
     <path d="M238 259h724v22c0 34-20 57-51 57H289c-31 0-51-23-51-57Z" fill="url(#shadow)"/>
-    <path d="M218 55q20 0 20 20v201c0 27 19 46 46 46h632c27 0 46-19 46-46V75q0-20 20-20" fill="none" stroke="#cbc1e0" stroke-opacity=".27" stroke-width="2"/>
-    <path d="M451 0h298v31q0 24 24 24h209q-20 0-20 20v201c0 27-19 46-46 46H284c-27 0-46-19-46-46V75q0-20-20-20h209q24 0 24-24Z" fill="#09090d"/>
-    <circle cx="600" cy="27" r="5" fill="#1d2030" stroke="#303449"/>
-    <circle cx="601.4" cy="25.7" r="1.4" fill="#6e7ca9"/>
+    <path d="M218 0q20 0 20 20v256c0 27 19 46 46 46h632c27 0 46-19 46-46V20q0-20 20-20" fill="#09090d" stroke="#cbc1e0" stroke-opacity=".27" stroke-width="2"/>
+
+    <g fill="#f4f3f8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-weight="600">
+      <path d="M985 24q10-9 20 0m-16 4q6-5 12 0m-9 4q3-2.5 6 0" fill="none" stroke="#f4f3f8" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="995" cy="36" r="1.5"/>
+      <rect x="1020" y="20" width="35" height="18" rx="5"/>
+      <path d="M1057 26q3 0 3 3t-3 3Z"/>
+      <text x="1024" y="34" fill="#161523" font-size="14">80</text>
+      <path d="m1051 21-5 8h3l-1 6 6-8h-4Z" fill="#161523"/>
+      <rect x="1075" y="20" width="18" height="7" rx="3.5" fill="none" stroke="#f4f3f8" stroke-width="1.5"/>
+      <circle cx="1080" cy="23.5" r="2.3"/>
+      <rect x="1074.25" y="30.25" width="19.5" height="8.5" rx="4.25"/>
+      <circle cx="1088" cy="34.5" r="2.5" fill="#161523"/>
+      <text x="1112" y="36" font-size="21">23:26</text>
+    </g>
 
     <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5">
       <rect x="282" y="77" width="52" height="36" rx="12" fill="#292633"/>
