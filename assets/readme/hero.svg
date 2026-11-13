@@ -74,15 +74,6 @@
           <path d="M292 250c37-22 63-8 101-23" fill="none" stroke="#c1a9ec" stroke-opacity=".5" stroke-width="2"/>
         </svg>
       </g>
-      <g id="media-source-icon" transform="translate(205 281)">
-        <rect width="41" height="41" rx="10" fill="#989c9e"/>
-        <rect x="1.5" y="1.5" width="38" height="38" rx="8.5" fill="none" stroke="#e2e5e6" stroke-opacity=".65" stroke-width="2.5"/>
-        <g fill="none" stroke="#d9dddd" stroke-opacity=".5" stroke-width=".85">
-          <circle cx="20.5" cy="20.5" r="13"/>
-          <ellipse cx="20.5" cy="20.5" rx="6.5" ry="13"/>
-          <path d="M8 20.5h25M20.5 7.5v26m-10-20h20m-20 14h20"/>
-        </g>
-      </g>
 
       <g id="player" fill="#d9d9d9">
         <rect x="288" y="230" width="410" height="10" rx="5" fill="#2e2e2e"/>
