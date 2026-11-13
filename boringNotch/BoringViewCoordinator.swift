@@ -210,8 +210,7 @@ final class BoringViewCoordinator: ObservableObject {
 
         for changes in [Defaults.publisher(.enableSneakPeek).map { _ in () }.eraseToAnyPublisher(),
                         Defaults.publisher(.alwaysShowSneakPeek).map { _ in () }.eraseToAnyPublisher(),
-                        Defaults.publisher(.sneakPeekDuration).map { _ in () }.eraseToAnyPublisher(),
-                        Defaults.publisher(.sneakPeekStyles).map { _ in () }.eraseToAnyPublisher()] {
+                        Defaults.publisher(.sneakPeekDuration).map { _ in () }.eraseToAnyPublisher()] {
             changes.sink { [weak self] in Task { @MainActor in self?.refreshMusicPeek() } }.store(in: &musicPeekCancellables)
         }
 
@@ -351,8 +350,13 @@ final class BoringViewCoordinator: ObservableObject {
         return true
     }
 
-    func sneakPeekBlocksHover(on screenUUID: String?) -> Bool {
-        shouldShowSneakPeek(on: screenUUID) && sneakPeekState(for: screenUUID).type != .music
+    func sneakPeekBlocksHover(on screenUUID: String?, primaryButtonDown: Bool) -> Bool {
+        guard shouldShowSneakPeek(on: screenUUID) else { return false }
+        switch sneakPeekState(for: screenUUID).type {
+        case .music: return false
+        case .volume, .brightness, .backlight: return primaryButtonDown
+        default: return true
+        }
     }
 
     var isAnySneakPeekShowing: Bool {

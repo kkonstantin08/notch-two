@@ -121,6 +121,22 @@ struct MediaCoreChecks {
         require(recovery.nextDelay(streamUptime: .seconds(45)) == .seconds(1), "healthy stream must reset the retry budget")
         require(NowPlayingAvailability.unavailable(.runtimeExhausted).offersManualRetry, "retry must remain available to the user")
 
+        let requestedAt = Date(timeIntervalSinceReferenceDate: 100)
+        let seekPreview = PlaybackSeekPreview(position: 90, requestedAt: requestedAt)
+        let nextTick = requestedAt.addingTimeInterval(0.5)
+        require(seekPreview.estimatedPosition(at: requestedAt, rate: 0, duration: 180) == 90,
+                "paused playback must immediately show the selected position")
+        require(seekPreview.estimatedPosition(at: nextTick, rate: 2, duration: 180) == 91,
+                "playing progress must advance from the seek target at the current rate")
+        var seekSample = PlaybackState(bundleIdentifier: "fixture.player", isPlaying: true,
+                                       currentTime: 15, duration: 180, playbackRate: 2, lastUpdated: nextTick)
+        require(!seekPreview.isConfirmed(by: seekSample), "an update from the old position must not undo a seek")
+        seekSample.currentTime = 90
+        seekSample.lastUpdated = requestedAt.addingTimeInterval(-0.1)
+        require(!seekPreview.isConfirmed(by: seekSample), "a pre-seek sample cannot confirm a new seek")
+        seekSample.lastUpdated = nextTick
+        require(seekPreview.isConfirmed(by: seekSample), "a fresh sample near the target must confirm the seek")
+
         var playingTrack = PlaybackState(bundleIdentifier: "fixture.player")
         playingTrack.title = "Track"
         playingTrack.isPlaying = true

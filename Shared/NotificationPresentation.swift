@@ -8,22 +8,32 @@ struct NotificationPresentation<Notice: Identifiable & Equatable> where Notice.I
     private(set) var isComposing = false
     private var duration: TimeInterval = 8
     private var remaining: TimeInterval?
+    private var pendingPriorityID: String?
 
-    mutating func receive(_ notice: Notice, at now: Date) {
+    mutating func receive(_ notice: Notice, at now: Date, prioritize: Bool = false) {
         if active == notice { return }
-        if active?.id == notice.id, !isComposing {
+        if active?.id == notice.id, !isComposing, !(prioritize && isHovered) {
             active = notice
             queued.removeAll { $0.id == notice.id }
+            if pendingPriorityID == notice.id { pendingPriorityID = nil }
             resetDeadline(at: now)
-            return
-        }
-        if let index = queued.firstIndex(where: { $0.id == notice.id }) {
-            queued[index] = notice
             return
         }
         if active == nil {
             active = notice
             resetDeadline(at: now)
+        } else {
+            enqueue(notice)
+            if prioritize {
+                pendingPriorityID = notice.id
+                if !isHovered && !isComposing { showPendingPriority(at: now) }
+            }
+        }
+    }
+
+    private mutating func enqueue(_ notice: Notice) {
+        if let index = queued.firstIndex(where: { $0.id == notice.id }) {
+            queued[index] = notice
         } else {
             if queued.count == 5 { queued.removeFirst() }
             queued.append(notice)
@@ -32,8 +42,10 @@ struct NotificationPresentation<Notice: Identifiable & Equatable> where Notice.I
 
     mutating func dismiss(token: String? = nil, at now: Date) {
         guard token == nil || token == active?.id else { return }
-        active = queued.isEmpty ? nil : queued.removeFirst()
+        active = nil
         isComposing = false
+        if showPendingPriority(at: now) { return }
+        active = queued.isEmpty ? nil : queued.removeFirst()
         resetDeadline(at: now)
     }
 
@@ -45,12 +57,25 @@ struct NotificationPresentation<Notice: Identifiable & Equatable> where Notice.I
     }
 
     mutating func showNext(at now: Date) {
-        guard !queued.isEmpty else { return }
-        let next = queued.removeFirst()
-        if let active, active.id != next.id { queued.append(active) }
+        guard !queued.isEmpty, !isComposing else { return }
+        showQueued(at: 0, now: now)
+    }
+
+    private mutating func showQueued(at index: Int, now: Date) {
+        let next = queued.remove(at: index)
+        if next.id == pendingPriorityID { pendingPriorityID = nil }
+        if let active, active.id != next.id { enqueue(active) }
         active = next
-        isComposing = false
         resetDeadline(at: now)
+    }
+
+    @discardableResult
+    private mutating func showPendingPriority(at now: Date) -> Bool {
+        guard let id = pendingPriorityID else { return false }
+        pendingPriorityID = nil
+        guard let index = queued.firstIndex(where: { $0.id == id }) else { return false }
+        showQueued(at: index, now: now)
+        return true
     }
 
     mutating func setHovered(_ hovered: Bool, at now: Date) {
@@ -73,7 +98,7 @@ struct NotificationPresentation<Notice: Identifiable & Equatable> where Notice.I
         if held {
             remaining = deadline.map { max(0, $0.timeIntervalSince(now)) }
             deadline = nil
-        } else if active != nil, duration > 0 {
+        } else if !showPendingPriority(at: now), active != nil, duration > 0 {
             deadline = now.addingTimeInterval(remaining ?? duration)
             remaining = nil
         }
@@ -96,6 +121,7 @@ struct NotificationPresentation<Notice: Identifiable & Equatable> where Notice.I
         isComposing = false
         deadline = nil
         remaining = nil
+        pendingPriorityID = nil
     }
 
     private mutating func resetDeadline(at now: Date) {

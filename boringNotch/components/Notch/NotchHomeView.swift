@@ -207,9 +207,7 @@ struct MusicControlsView: View {
                 dragging: $dragging,
                 currentDate: date,
                 timestampDate: musicManager.timestampDate,
-                elapsedTime: musicManager.elapsedTime,
-                playbackRate: musicManager.playbackRate,
-                isPlaying: musicManager.isPlaying,
+                seekPreview: musicManager.seekPreview,
                 onValueChange: { newValue in
                     MusicManager.shared.seek(to: newValue)
                 },
@@ -621,9 +619,7 @@ struct MusicSliderView: View {
     @Binding var dragging: Bool
     let currentDate: Date
     let timestampDate: Date
-    let elapsedTime: Double
-    let playbackRate: Double
-    let isPlaying: Bool
+    let seekPreview: PlaybackSeekPreview?
     var onValueChange: (Double) -> Void
 
     // Ported from Atoll (GPL-3.0, itself a boring.notch fork) so the
@@ -654,6 +650,9 @@ struct MusicSliderView: View {
             syncProgress(at: currentDate)
         }
         .onChange(of: timestampDate) {
+            syncProgress(at: .now)
+        }
+        .onChange(of: seekPreview) {
             syncProgress(at: .now)
         }
         .onChange(of: dragging) {

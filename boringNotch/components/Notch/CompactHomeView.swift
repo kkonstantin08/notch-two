@@ -152,9 +152,7 @@ struct CompactHomeView: View {
                 dragging: $dragging,
                 currentDate: date,
                 timestampDate: musicManager.timestampDate,
-                elapsedTime: musicManager.elapsedTime,
-                playbackRate: musicManager.playbackRate,
-                isPlaying: musicManager.isPlaying,
+                seekPreview: musicManager.seekPreview,
                 onValueChange: { MusicManager.shared.seek(to: $0) },
                 trailingLabel: showRemainingTime ? .remaining : .duration
             )

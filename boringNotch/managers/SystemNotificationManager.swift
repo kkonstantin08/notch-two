@@ -16,6 +16,8 @@ struct SystemNotification: Identifiable, Equatable {
     let body: String?
     let receivedAt: Date
     var nativeActionID: String? = nil
+
+    var isTelegram: Bool { bundleID == "ru.keepcoder.Telegram" }
 }
 
 @MainActor
@@ -34,6 +36,7 @@ final class SystemNotificationManager: ObservableObject {
     private var subscriptions = Set<AnyCancellable>()
     private var watchingSession: UUID?
     private var retryBudget = NotificationRetryBudget()
+    private var isOpeningNotification = false
 
     private init() {}
 
@@ -162,7 +165,7 @@ final class SystemNotificationManager: ObservableObject {
 
     func beginReply(to notification: SystemNotification) -> Bool {
         guard Defaults[.telegramNotificationReplies], activeNotification == notification,
-              !presentation.isComposing else { return false }
+              !presentation.isComposing, !isOpeningNotification else { return false }
         presentation.setComposing(true, at: Date())
         publish()
         return true
@@ -177,6 +180,11 @@ final class SystemNotificationManager: ObservableObject {
     func dismissActive(token: String? = nil) {
         presentation.dismiss(token: token, at: Date())
         publish()
+    }
+
+    func dismiss(_ notification: SystemNotification) {
+        guard activeNotification == notification else { return }
+        dismissActive(token: notification.id)
     }
 
     func showNextQueued() {
@@ -198,7 +206,15 @@ final class SystemNotificationManager: ObservableObject {
         }
     }
 
-    func open(_ notification: SystemNotification) async -> Bool {
+    func openAndDismiss(_ notification: SystemNotification, fromReplyFallback: Bool = false) async {
+        guard (activeNotification == notification || fromReplyFallback),
+              !presentation.isComposing, !isOpeningNotification else { return }
+        isOpeningNotification = true
+        defer { isOpeningNotification = false }
+        if await open(notification) { dismiss(notification) }
+    }
+
+    private func open(_ notification: SystemNotification) async -> Bool {
         if let actionID = notification.nativeActionID,
            await XPCHelperClient.shared.openNotification(actionID) { return true }
 
@@ -261,7 +277,7 @@ final class SystemNotificationManager: ObservableObject {
         )
         guard isAllowed(notification) else { log.debug("Banner rejected by app filter"); return }
         log.debug("Visible banner accepted by app")
-        presentation.receive(notification, at: Date())
+        presentation.receive(notification, at: Date(), prioritize: notification.isTelegram)
         publish()
     }
 

@@ -87,6 +87,23 @@ extension PlaybackState: Equatable {
     }
 }
 
+struct PlaybackSeekPreview: Equatable {
+    let position: TimeInterval
+    let requestedAt: Date
+
+    func estimatedPosition(at date: Date, rate: Double, duration: TimeInterval) -> TimeInterval {
+        let elapsed = max(0, date.timeIntervalSince(requestedAt))
+        return min(max(0, position + elapsed * rate), duration)
+    }
+
+    func isConfirmed(by state: PlaybackState) -> Bool {
+        guard state.lastUpdated >= requestedAt else { return false }
+        let expected = estimatedPosition(at: state.lastUpdated, rate: state.isPlaying ? state.playbackRate : 0,
+                                         duration: state.duration)
+        return abs(state.currentTime - expected) <= 1
+    }
+}
+
 struct PlaybackPauseConfirmation {
     let requested: PlaybackState
     private var observedPlaying = false

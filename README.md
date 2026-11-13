@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/kkonstantin08/notch-two/releases/tag/v0.1.0-preview.1"><img alt="Latest preview" src="https://img.shields.io/github/v/release/kkonstantin08/notch-two?include_prereleases&label=preview"></a>
+  <a href="https://github.com/kkonstantin08/notch-two/releases/tag/v0.1.0-preview.2"><img alt="Latest preview" src="https://img.shields.io/github/v/release/kkonstantin08/notch-two?include_prereleases&label=preview"></a>
   <img alt="macOS 15.6+" src="https://img.shields.io/badge/macOS-15.6%2B-111111?logo=apple&logoColor=white">
   <img alt="Apple Silicon" src="https://img.shields.io/badge/Apple%20Silicon-arm64-111111?logo=apple&logoColor=white">
   <a href="LICENSE"><img alt="GPL-3.0 license" src="https://img.shields.io/badge/license-GPL--3.0-blue.svg"></a>
@@ -22,9 +22,9 @@ The upstream Boring Notch project remains separate. Notch Two uses its own app i
 
 ## Get the preview
 
-**Notch Two `v0.1.0-preview.1`** is an arm64 preview built from app version `2.8-beta.0` (build `272`).
+**Notch Two `v0.1.0-preview.2`** is an arm64 preview built from app version `2.8-beta.0` (build `273`).
 
-1. Download [Notch-Two-2.8-beta.0-build.272-arm64.zip](https://github.com/kkonstantin08/notch-two/releases/download/v0.1.0-preview.1/Notch-Two-2.8-beta.0-build.272-arm64.zip) and expand it.
+1. Download [Notch-Two-2.8-beta.0-build.273-arm64.zip](https://github.com/kkonstantin08/notch-two/releases/download/v0.1.0-preview.2/Notch-Two-2.8-beta.0-build.273-arm64.zip) and expand it.
 2. Move **Notch Two.app** to **Applications**.
 3. This preview is ad-hoc signed and is not notarized by Apple. To clear the quarantine flag before opening it, run:
 

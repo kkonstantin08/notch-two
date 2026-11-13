@@ -23,6 +23,7 @@ struct ContentView: View {
     @ObservedObject var volumeManager = VolumeManager.shared
     @Default(.enableSneakPeek) private var musicPeekEnabled
     @Default(.alwaysShowSneakPeek) private var alwaysMusicPeek
+    @Default(.sneakPeekStyles) private var musicPeekStyle
     @Default(.sneakPeekAlignment) private var musicPeekAlignment
     @Default(.boringShelf) private var shelfEnabled
     @ObservedObject var notificationManager = SystemNotificationManager.shared
@@ -130,7 +131,7 @@ struct ContentView: View {
         // The inline song-change peek is drawn inside the music pill, so it
         // has to bring the pill with it even when the persistent live
         // activity is turned off — otherwise the peek never appears.
-        if musicIsShowing || showingInlineMusicPeek || showingStandardMusicPeek {
+        if musicIsShowing || visibleMusicPeekStyle != nil {
             items.append(.music)
         }
 
@@ -245,7 +246,7 @@ struct ContentView: View {
                 // The inline song-change peek widens the pill itself, so the
                 // chin has to grow with it — otherwise the hover region is
                 // narrower than what's on screen.
-                if showingInlineMusicPeek {
+                if visibleMusicPeekStyle == .inline {
                     chinWidth += 2 * inlineMusicPeekLabelWidth
                 }
             }
@@ -301,6 +302,18 @@ struct ContentView: View {
                         vm.notchState == .open ? openedInsets.top : cornerRadiusInsets.closed.bottom
                     )
                     .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
+                    .background {
+                        if vm.notchState == .open, !vm.isComposingNotificationReply,
+                           let notification = notificationManager.activeNotification {
+                            Button {
+                                Task { await notificationManager.openAndDismiss(notification) }
+                            } label: {
+                                Color.clear.contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityHidden(true)
+                        }
+                    }
                     .background(.black)
                     .clipShape(currentNotchShape)
                           .overlay(alignment: .top) {
@@ -687,15 +700,13 @@ struct ContentView: View {
             && (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
     }
 
-    private var showingStandardMusicPeek: Bool {
-        Defaults[.sneakPeekStyles] == .standard && (persistentMusicPeek
-            || (coordinator.shouldShowSneakPeek(on: vm.screenUUID) && coordinator.sneakPeekState(for: vm.screenUUID).type == .music))
-    }
-
-    private var showingInlineMusicPeek: Bool {
-        musicPeekEnabled && notificationManager.activeNotification == nil
-            && Defaults[.sneakPeekStyles] == .inline
-            && (persistentMusicPeek || (coordinator.expandingView.show && coordinator.expandingView.type == .music))
+    private var visibleMusicPeekStyle: SneakPeekStyle? {
+        guard musicPeekEnabled, notificationManager.activeNotification == nil else { return nil }
+        let screenPeek = coordinator.sneakPeekState(for: vm.screenUUID)
+        let expandedPeek = coordinator.expandingView
+        let visible = persistentMusicPeek || (screenPeek.show && screenPeek.type == .music)
+            || (expandedPeek.show && expandedPeek.type == .music)
+        return visible ? musicPeekStyle : nil
     }
 
     /// Width of the black centre section of the closed music pill.
@@ -710,7 +721,7 @@ struct ContentView: View {
     /// clears the bezel — the inline path had dropped it entirely.
     private var musicActivityCenterWidth: CGFloat {
         let margin = vm.closedNotchSize.width - 4 + (2 * liveActivityEdgeMargin)
-        guard showingInlineMusicPeek else { return margin }
+        guard visibleMusicPeekStyle == .inline else { return margin }
         return margin + (2 * inlineMusicPeekLabelWidth)
     }
 
@@ -719,7 +730,7 @@ struct ContentView: View {
 
     @ViewBuilder
     func MusicLiveActivity() -> some View {
-        if showingStandardMusicPeek {
+        if visibleMusicPeekStyle == .standard {
             VStack(alignment: .leading, spacing: 0) {
                 musicActivityHeader
                 GeometryReader { geometry in
@@ -783,7 +794,7 @@ struct ContentView: View {
                     // vertically centered, so top-aligned labels sat visibly
                     // high against it.
                     HStack(alignment: .center) {
-                        if showingInlineMusicPeek {
+                        if visibleMusicPeekStyle == .inline {
                             Text(musicManager.songTitle)
                                 .lineLimit(1).truncationMode(.tail)
                                 .frame(width: inlineMusicPeekLabelWidth, alignment: .leading)
@@ -851,7 +862,9 @@ extension ContentView {
         vm.notchState == .closed
             && Defaults[.openNotchOnHover]
             && !shouldDisplayNowPlayingFallbackNotice
-            && !coordinator.sneakPeekBlocksHover(on: vm.screenUUID)
+            && !coordinator.sneakPeekBlocksHover(
+                on: vm.screenUUID, primaryButtonDown: NSEvent.pressedMouseButtons & 1 != 0
+            )
     }
 
     /// Closes the open notch after the hover grace period unless a popover

@@ -430,7 +430,7 @@ final class NotificationWatcher: @unchecked Sendable {
                     let isStillHidden = window.point(kAXPositionAttribute).map {
                         abs($0.x - lease.hidden.x) < 1 && abs($0.y - lease.hidden.y) < 1
                     } == true
-                    guard (isStillHidden || hasNewContent || parking.consumeReplyLayoutChange(for: key, at: Date())),
+                    guard (isStillHidden || hasNewContent || parking.allowsReplyLayoutChange(for: key, at: Date())),
                           ensureHidden(window, lease: lease) else {
                         nativeOnlyTokens.formUnion(notifications.map(\.token))
                         useNative?(notifications.map(\.token))
@@ -468,9 +468,9 @@ final class NotificationWatcher: @unchecked Sendable {
     private func publish(_ notifications: [CapturedNotification], elements: [AXUIElement], windowKey: UInt) {
         guard mayMove else { return }
         for (notification, element) in zip(notifications, elements) {
-            if let previous = liveNotifications[notification.token],
+            if let previous = liveNotifications[notification.token] ?? replyTarget,
                previous.content == notification, previous.windowKey == windowKey {
-                if !CFEqual(previous.element, element) {
+                if liveNotifications[notification.token] == nil || !CFEqual(previous.element, element) {
                     let current = LiveNotification(content: notification, element: element, windowKey: windowKey, actionID: previous.actionID)
                     liveNotifications[notification.token] = current
                     if let actionID = current.actionID, replyTarget?.actionID == actionID { replyTarget = current }
@@ -484,10 +484,16 @@ final class NotificationWatcher: @unchecked Sendable {
     }
 
     func openNotification(_ actionID: String) -> Bool {
-        guard replyTarget?.actionID != actionID, let target = liveTarget(for: actionID) else { return false }
+        guard replyTarget?.actionID != actionID, let target = refreshedTarget(for: actionID) else { return false }
         guard actions(of: target.element).contains(kAXPressAction), mayMove else { return false }
         liveNotifications[target.content.token]?.actionID = nil
         return AXUIElementPerformAction(target.element, kAXPressAction as CFString) == .success
+    }
+
+    private func refreshedTarget(for actionID: String) -> LiveNotification? {
+        if let target = liveTarget(for: actionID) { return target }
+        scan()
+        return liveTarget(for: actionID)
     }
 
     private func liveTarget(for actionID: String) -> LiveNotification? {
@@ -515,18 +521,20 @@ final class NotificationWatcher: @unchecked Sendable {
 
     private func replySubmitAction(on banner: AXUIElement) -> String? {
         let names = actions(of: banner)
+        if let send = action(in: names, named: ["Send", "Отправить"]) { return send }
         guard action(in: names, named: ["Hide Details", "Скрыть детали"]) != nil else { return nil }
-        return action(in: names, named: ["Send", "Reply", "Ответ", "Отправить"])
+        return action(in: names, named: ["Reply", "Ответ"])
     }
 
     func notificationReply(_ actionID: String, operation: NotificationReplyOperation, text: String) -> NotificationReplyResult {
         switch operation {
         case .begin:
-            guard replyTarget == nil, let target = liveTarget(for: actionID),
-                  target.content.bundleID == "ru.keepcoder.Telegram" else {
-                log.notice("Reply preparation refused: original banner is no longer available or a reply is already open")
+            guard let target = refreshedTarget(for: actionID), target.content.bundleID == "ru.keepcoder.Telegram" else {
+                log.notice("Reply preparation refused: original banner is no longer available")
                 return .unavailable
             }
+            // The app owns a single composer, but its cancellation can race a new begin.
+            if replyTarget != nil { collapseReply() }
             guard let reveal = action(in: actions(of: target.element), named: ["Reply", "Ответить"]), mayMove else {
                 log.notice("Reply preparation refused: native reply action missing")
                 return .unavailable
@@ -547,16 +555,24 @@ final class NotificationWatcher: @unchecked Sendable {
             return .accepted
         case .submit:
             guard text.utf8.count <= 16_384, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  let target = refreshedTarget(for: actionID),
                   let composing = replyTarget, composing.actionID == actionID,
-                  let target = liveTarget(for: actionID), CFEqual(target.element, composing.element),
+                  target.content.bundleID == "ru.keepcoder.Telegram", CFEqual(target.element, composing.element),
                   let field = replyField(in: target.element),
                   replySubmitAction(on: target.element) != nil,
-                  mayMove else { return .unavailable }
-            guard AXUIElementSetAttributeValue(field, kAXValueAttribute as CFString, text as CFString) == .success,
-                  field[kAXValueAttribute] as? String == text,
-                  let current = liveTarget(for: actionID), CFEqual(current.element, target.element),
+                  mayMove else {
+                log.notice("Reply submission refused: original native editor unavailable")
+                return .unavailable
+            }
+            // AX can report an error even when Notification Center updated the field.
+            _ = AXUIElementSetAttributeValue(field, kAXValueAttribute as CFString, text as CFString)
+            guard let current = liveTarget(for: actionID), CFEqual(current.element, target.element),
+                  let currentField = replyField(in: current.element), currentField[kAXValueAttribute] as? String == text,
                   let send = replySubmitAction(on: current.element)
-            else { return .unavailable }
+            else {
+                log.notice("Reply submission refused: native editor text or send action could not be verified")
+                return .unavailable
+            }
 
             // Consume the action before submitting. An AX timeout can still have sent the reply.
             moveLock.lock()
@@ -575,8 +591,10 @@ final class NotificationWatcher: @unchecked Sendable {
 
     func replyReadiness(_ actionID: String, attempt: UUID) -> NotificationReplyReadiness {
         guard replyAttempt == attempt, let composing = replyTarget, composing.actionID == actionID,
-              let current = liveNotifications[composing.content.token], current.actionID == actionID,
-              CFEqual(current.element, composing.element), mayMove else { return .invalid }
+              mayMove else { return .invalid }
+        // Notification Center can briefly remove the element while rebuilding the editor.
+        guard let current = liveNotifications[composing.content.token] else { return .waiting }
+        guard current.actionID == actionID, CFEqual(current.element, composing.element) else { return .invalid }
         return replySubmitAction(on: current.element) != nil && replyField(in: current.element) != nil ? .ready : .waiting
     }
 

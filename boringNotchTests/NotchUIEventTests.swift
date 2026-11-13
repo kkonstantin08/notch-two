@@ -23,7 +23,7 @@ final class NotchUIEventTests: XCTestCase {
     }
 
     @MainActor
-    func testMusicPeekAllowsHoverWhileSystemOSDBlocksIt() {
+    func testVolumeAndBrightnessOnlyBlockHoverWhileAdjusting() {
         let coordinator = BoringViewCoordinator.shared
         let screen = UUID().uuidString
         let enabled = Defaults[.enableSneakPeek]
@@ -35,14 +35,76 @@ final class NotchUIEventTests: XCTestCase {
         Defaults[.enableSneakPeek] = true
         coordinator.sneakPeekStates[screen] = SneakPeekState(show: true, type: .music)
         XCTAssertTrue(coordinator.shouldShowSneakPeek(on: screen))
-        XCTAssertFalse(coordinator.sneakPeekBlocksHover(on: screen))
+        XCTAssertFalse(coordinator.sneakPeekBlocksHover(on: screen, primaryButtonDown: false))
 
-        coordinator.sneakPeekStates[screen] = SneakPeekState(show: true, type: .volume)
-        XCTAssertTrue(coordinator.sneakPeekBlocksHover(on: screen))
-        XCTAssertFalse(coordinator.sneakPeekBlocksHover(on: nil))
+        for type in [SneakContentType.volume, .brightness, .backlight] {
+            coordinator.sneakPeekStates[screen] = SneakPeekState(show: true, type: type)
+            XCTAssertTrue(coordinator.shouldShowSneakPeek(on: screen))
+            XCTAssertFalse(coordinator.sneakPeekBlocksHover(on: screen, primaryButtonDown: false))
+            XCTAssertTrue(coordinator.sneakPeekBlocksHover(on: screen, primaryButtonDown: true))
+        }
 
+        coordinator.sneakPeekStates[screen] = SneakPeekState(show: true, type: .mic)
+        XCTAssertTrue(coordinator.sneakPeekBlocksHover(on: screen, primaryButtonDown: false))
+        XCTAssertFalse(coordinator.sneakPeekBlocksHover(on: nil, primaryButtonDown: true))
         coordinator.sneakPeekStates[screen]?.show = false
-        XCTAssertFalse(coordinator.sneakPeekBlocksHover(on: screen))
+        XCTAssertFalse(coordinator.sneakPeekBlocksHover(on: screen, primaryButtonDown: true))
+    }
+
+    @MainActor
+    func testVisibleMusicPeekChangesStyleWhilePlaying() async throws {
+        // Let presentation events from the bus finish before setting the fixture.
+        try await Task.sleep(for: .milliseconds(50))
+        let coordinator = BoringViewCoordinator.shared
+        let music = MusicManager.shared
+        let screen = UUID().uuidString
+        let enabled = Defaults[.enableSneakPeek]
+        let always = Defaults[.alwaysShowSneakPeek]
+        let style = Defaults[.sneakPeekStyles]
+        let playing = music.isPlaying
+        let hello = coordinator.helloAnimationRunning
+        let expandingView = coordinator.expandingView
+        defer {
+            coordinator.sneakPeekStates[screen] = nil
+            coordinator.helloAnimationRunning = hello
+            coordinator.expandingView = expandingView
+            music.isPlaying = playing
+            Defaults[.enableSneakPeek] = enabled
+            Defaults[.alwaysShowSneakPeek] = always
+            Defaults[.sneakPeekStyles] = style
+        }
+
+        coordinator.helloAnimationRunning = false
+        coordinator.expandingView = .init()
+        music.isPlaying = true
+        Defaults[.enableSneakPeek] = true
+        let model = BoringViewModel(screenUUID: screen, camera: CameraModel())
+        model.hideOnClosed = false
+        let host = NSHostingView(rootView: ContentView().environmentObject(model))
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 800, height: 400),
+                              styleMask: .borderless, backing: .buffered, defer: false)
+        window.contentView = host
+        defer { window.contentView = nil }
+
+        for persistent in [true, false] {
+            Defaults[.alwaysShowSneakPeek] = persistent
+            Defaults[.sneakPeekStyles] = .standard
+            coordinator.sneakPeekStates[screen] = persistent ? nil : SneakPeekState(show: true, type: .music)
+            try await Task.sleep(for: .milliseconds(50))
+            let standard = host.fittingSize
+
+            Defaults[.sneakPeekStyles] = .inline
+            try await Task.sleep(for: .milliseconds(50))
+            let inline = host.fittingSize
+            let state = "persistent = \(persistent), expanded = \(coordinator.expandingView), playing = \(music.isPlaying)"
+            XCTAssertGreaterThan(inline.width, standard.width + 100, state)
+            XCTAssertLessThan(inline.height, standard.height, state)
+
+            Defaults[.sneakPeekStyles] = .standard
+            try await Task.sleep(for: .milliseconds(50))
+            XCTAssertEqual(host.fittingSize.width, standard.width, accuracy: 1)
+            XCTAssertEqual(host.fittingSize.height, standard.height, accuracy: 1)
+        }
     }
 
     /// Managers publish; the presenter subscribes — the seam that replaced

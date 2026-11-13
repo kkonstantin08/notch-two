@@ -82,6 +82,8 @@ final class MusicManager: ObservableObject {
     // Active controller
     private var playbackCommandVersion = UUID()
     private var activeController: (any MediaControllerProtocol)?
+    private var seekPreviewTimeout: Task<Void, Never>?
+    @Published private(set) var seekPreview: PlaybackSeekPreview?
 
     // Published properties for UI
     @Published var songTitle: String = ""
@@ -146,6 +148,7 @@ final class MusicManager: ObservableObject {
         runtimeFailureTask?.cancel()
         runtimeRecoveryTask?.cancel()
         noticeDismissalTask?.cancel()
+        seekPreviewTimeout?.cancel()
         controllerCancellables.removeAll()
         artworkWorkItem?.cancel()
         averageColorTask?.cancel()
@@ -164,6 +167,7 @@ final class MusicManager: ObservableObject {
         runtimeFailureTask = nil
         runtimeRecoveryTask = nil
         noticeDismissalTask = nil
+        clearSeekPreview()
         controllerCancellables.removeAll()
         artworkWorkItem?.cancel()
         artworkWorkItem = nil
@@ -392,6 +396,7 @@ final class MusicManager: ObservableObject {
     }
 
     private func resetPublishedPlaybackState() {
+        clearSeekPreview()
         debounceIdleTask?.cancel()
         debounceIdleTask = nil
         artworkWorkItem?.cancel()
@@ -577,8 +582,12 @@ final class MusicManager: ObservableObject {
         // every no-op stream event invalidates the whole view tree. A pause/
         // resume must rebase it too, or the estimate overshoots by the pause
         // duration.
-        if timeChanged || playbackRateChanged || playingStateChanged || trackChanged {
+        let seekConfirmed = seekPreview?.isConfirmed(by: state) == true
+        if timeChanged || playbackRateChanged || playingStateChanged || trackChanged || seekConfirmed {
             self.timestampDate = state.lastUpdated
+        }
+        if seekPreview != nil, trackChanged || seekConfirmed {
+            clearSeekPreview()
         }
     }
 
@@ -669,6 +678,9 @@ final class MusicManager: ObservableObject {
 
     // MARK: - Playback Position Estimation
     func estimatedPlaybackPosition(at date: Date = Date()) -> TimeInterval {
+        if let seekPreview {
+            return seekPreview.estimatedPosition(at: date, rate: isPlaying ? playbackRate : 0, duration: songDuration)
+        }
         guard isPlaying else { return min(elapsedTime, songDuration) }
 
         let timeDifference = date.timeIntervalSince(timestampDate)
@@ -794,13 +806,31 @@ final class MusicManager: ObservableObject {
     }
 
     func seek(to position: TimeInterval) {
+        guard let controller = activeController, songDuration > 0, position.isFinite else { return }
+        let target = min(max(0, position), songDuration)
+        let preview = PlaybackSeekPreview(position: target, requestedAt: .now)
+        seekPreview = preview
+        seekPreviewTimeout?.cancel()
+        seekPreviewTimeout = Task { [weak self] in
+            // Fall back to the player's position if it never confirms the seek.
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            self?.clearSeekPreview()
+        }
         Task {
-            await activeController?.seek(to: position)
+            guard activeController === controller else { return }
+            await controller.seek(to: target)
         }
     }
+
+    private func clearSeekPreview() {
+        seekPreviewTimeout?.cancel()
+        seekPreviewTimeout = nil
+        if seekPreview != nil { seekPreview = nil }
+    }
+
     func skip(seconds: TimeInterval) {
-        let newPos = min(max(0, elapsedTime + seconds), songDuration)
-        seek(to: newPos)
+        seek(to: estimatedPlaybackPosition() + seconds)
     }
 
     func setVolume(to level: Double) {

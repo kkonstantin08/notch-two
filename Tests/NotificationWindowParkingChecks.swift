@@ -42,13 +42,12 @@ struct NotificationWindowParkingChecks {
         assert(state.leaseToRestore(staleWindow, at: now.addingTimeInterval(1)) == nil)
         assert(state.lease(for: 1)?.windowID == 2)
         state.expectReplyLayoutChange(for: 1, at: now)
-        assert(!state.consumeReplyLayoutChange(for: 2, at: now))
-        assert(state.consumeReplyLayoutChange(for: 1, at: now.addingTimeInterval(0.1)))
-        assert(!state.consumeReplyLayoutChange(for: 1, at: now.addingTimeInterval(0.2)))
-        state.expectReplyLayoutChange(for: 1, at: now)
-        assert(!state.consumeReplyLayoutChange(for: 1, at: now.addingTimeInterval(1)))
+        assert(!state.allowsReplyLayoutChange(for: 2, at: now))
+        assert(state.allowsReplyLayoutChange(for: 1, at: now.addingTimeInterval(0.1)))
+        assert(state.allowsReplyLayoutChange(for: 1, at: now.addingTimeInterval(0.2)))
+        assert(!state.allowsReplyLayoutChange(for: 1, at: now.addingTimeInterval(1)))
         state.expectReplyLayoutChange(for: 1, at: now, duration: NotificationReplyReadiness.timeout)
-        assert(state.consumeReplyLayoutChange(for: 1, at: now.addingTimeInterval(0.5)))
+        assert(state.allowsReplyLayoutChange(for: 1, at: now.addingTimeInterval(0.5)))
 
         var checks = 0
         let ready = await NotificationReplyReadiness.wait {

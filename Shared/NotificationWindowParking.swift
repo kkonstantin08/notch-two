@@ -77,9 +77,8 @@ struct NotificationWindowParkingState {
     mutating func expectReplyLayoutChange(for window: UInt, at now: Date, duration: TimeInterval = 0.35) {
         entries[window]?.replyLayoutDeadline = now.addingTimeInterval(duration)
     }
-    mutating func consumeReplyLayoutChange(for window: UInt, at now: Date) -> Bool {
+    func allowsReplyLayoutChange(for window: UInt, at now: Date) -> Bool {
         guard let deadline = entries[window]?.replyLayoutDeadline else { return false }
-        entries[window]?.replyLayoutDeadline = nil
         return now <= deadline
     }
     mutating func remove(_ window: UInt) { entries[window] = nil }

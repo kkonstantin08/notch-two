@@ -116,7 +116,7 @@ struct NotificationExpandedView: View {
 
     private var cardActions: some View {
         HStack(spacing: 4) {
-            if telegramReplies, notification.bundleID == "ru.keepcoder.Telegram", notification.nativeActionID != nil {
+            if telegramReplies, notification.isTelegram, notification.nativeActionID != nil {
                 Button(action: beginReply) {
                     Text("Reply")
                         .font(.system(size: 12))
@@ -147,8 +147,8 @@ struct NotificationExpandedView: View {
             }
 
             Button {
+                manager.dismiss(notification)
                 endReply()
-                manager.dismissActive(token: notification.id)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .semibold))
@@ -183,6 +183,8 @@ struct NotificationExpandedView: View {
                     .foregroundStyle(.secondary)
             }
             if replyUnavailable {
+                Text("The system reply editor is no longer available.")
+                    .foregroundStyle(.secondary)
                 Button("Copy reply and open Telegram", action: continueInTelegram)
                     .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
@@ -200,12 +202,10 @@ struct NotificationExpandedView: View {
         vm.isComposingNotificationReply = true
         Task {
             let result = await XPCHelperClient.shared.notificationReply(actionID, operation: .begin)
+            isOpeningReply = false
             guard replySession == session else {
-                if result == .accepted { _ = await XPCHelperClient.shared.notificationReply(actionID, operation: .cancel) }
-                isOpeningReply = false
                 return
             }
-            isOpeningReply = false
             canSend = result == .accepted
             if !canSend {
                 replyUnavailable = true
@@ -226,8 +226,8 @@ struct NotificationExpandedView: View {
             canSend = false
             switch result {
             case .accepted:
+                manager.dismiss(notification)
                 endReply()
-                manager.dismissActive(token: notification.id)
             case .unavailable:
                 replyUnavailable = true
             case .uncertain:
@@ -261,16 +261,13 @@ struct NotificationExpandedView: View {
         if let actionID = notification.nativeActionID {
             Task {
                 _ = await XPCHelperClient.shared.notificationReply(actionID, operation: .cancel)
-                if openSource { openSourceApp() }
+                if openSource { await manager.openAndDismiss(notification, fromReplyFallback: true) }
             }
         }
     }
 
     private func openSourceApp() {
-        Task {
-            guard await manager.open(notification), manager.activeNotification == notification else { return }
-            manager.dismissActive(token: notification.id)
-        }
+        Task { await manager.openAndDismiss(notification) }
     }
 }
 

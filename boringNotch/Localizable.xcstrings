@@ -81,6 +81,16 @@
         }
       }
     },
+    "The system reply editor is no longer available." : {
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Системное поле ответа больше недоступно."
+          }
+        }
+      }
+    },
     "If Notch Two is already enabled, remove its entry with −. Then use + to add and enable %@." : {
       "localizations": {
         "ru": {
